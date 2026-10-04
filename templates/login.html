@@ -197,7 +197,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Department</label>
-                    <select name="department_id" id="reg-dept-select" class="form-control" required onchange="loadDivisionsForDepartment(this.value)">
+                    <select name="department_id" id="reg-dept-select" class="form-control" required>
                         <option value="">-- Select Department --</option>
                         {% for dept in departments %}
                             <option value="{{ dept.id }}">{{ dept.name }} ({{ dept.code }})</option>
@@ -211,12 +211,6 @@
                         <option value="Second Year (SE)">Second Year (SE)</option>
                         <option value="Third Year (TE)" selected>Third Year (TE)</option>
                         <option value="Final Year (BE)">Final Year (BE)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Division</label>
-                    <select name="division_id" id="reg-div-select" class="form-control" required>
-                        <option value="">-- Select Department First --</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -391,36 +385,6 @@ function switchRoleTab(tabId) {
         btnClub.style.boxShadow = 'var(--shadow-sm)';
         btnClub.style.fontWeight = '800';
     }
-}
-
-function loadDivisionsForDepartment(deptId) {
-    const divSelect = document.getElementById('reg-div-select');
-    divSelect.innerHTML = '<option value="">Loading divisions...</option>';
-
-    if (!deptId) {
-        divSelect.innerHTML = '<option value="">-- Select Department First --</option>';
-        return;
-    }
-
-    fetch('/api/divisions/' + deptId)
-        .then(res => res.json())
-        .then(divisions => {
-            divSelect.innerHTML = '';
-            if (divisions.length === 0) {
-                divSelect.innerHTML = '<option value="">No specific divisions</option>';
-            } else {
-                divisions.forEach(div => {
-                    const opt = document.createElement('option');
-                    opt.value = div.id;
-                    opt.textContent = 'Division ' + div.name;
-                    divSelect.appendChild(opt);
-                });
-            }
-        })
-        .catch(err => {
-            console.error('Error fetching divisions:', err);
-            divSelect.innerHTML = '<option value="">Error loading divisions</option>';
-        });
 }
 </script>
 {% endblock %}

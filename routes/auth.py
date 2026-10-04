@@ -1,7 +1,7 @@
 from functools import wraps
 from flask import Blueprint, request, render_template, redirect, url_for, flash, session, g
 from database import db
-from models import User, Student, Faculty, Club, Department, Division
+from models import User, Student, Faculty, Club, Department
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -85,7 +85,6 @@ def register_student():
     email = request.form.get('email', '').strip().lower()
     password = request.form.get('password', '')
     department_id = request.form.get('department_id')
-    division_id = request.form.get('division_id')
     academic_year = request.form.get('academic_year')
     roll_number = request.form.get('roll_number', '').strip()
 
@@ -103,12 +102,9 @@ def register_student():
     db.session.add(user)
     db.session.flush()
 
-    div_id = int(division_id) if division_id and division_id.isdigit() else None
-
     student = Student(
         user_id=user.id,
         department_id=int(department_id),
-        division_id=div_id,
         academic_year=academic_year,
         roll_number=roll_number
     )

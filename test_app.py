@@ -16,7 +16,7 @@ class CampusConnectRealDataTestCase(unittest.TestCase):
 
             # Seed essential departments
             dept_aiml = Department(name="Artificial Intelligence & Machine Learning", code="AIML", description="AI Department")
-            dept_cse = Department(name="Computer Engineering", code="CSE", description="CSE Department")
+            dept_cse = Department(name="Computer Science Engineering", code="CSE", description="CSE Department")
             db.session.add_all([dept_aiml, dept_cse])
             db.session.commit()
 

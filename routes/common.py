@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, jsonify, request, abort
 from database import db
-from models import Notice, ExternalResource, Department, Division
+from models import Notice, ExternalResource, Department
 from routes.auth import login_required
 
 common_bp = Blueprint('common', __name__)
@@ -27,8 +27,3 @@ def resources():
 def get_departments():
     depts = Department.query.all()
     return jsonify([{'id': d.id, 'name': d.name, 'code': d.code} for d in depts])
-
-@common_bp.route('/api/divisions/<int:department_id>')
-def get_divisions(department_id):
-    divisions = Division.query.filter_by(department_id=department_id).all()
-    return jsonify([{'id': d.id, 'name': d.name} for d in divisions])

@@ -9,7 +9,6 @@ class Department(db.Model):
     code = db.Column(db.String(20), nullable=False, unique=True)
     description = db.Column(db.String(255), nullable=True)
 
-    divisions = db.relationship('Division', backref='department', lazy=True, cascade="all, delete-orphan")
     students = db.relationship('Student', backref='department', lazy=True)
     faculty_members = db.relationship('Faculty', backref='department', lazy=True)
     clubs = db.relationship('Club', backref='department', lazy=True)
@@ -17,14 +16,6 @@ class Department(db.Model):
     assignments = db.relationship('Assignment', backref='department', lazy=True)
     notices = db.relationship('Notice', backref='department', lazy=True)
     quizzes = db.relationship('Quiz', backref='department', lazy=True)
-
-class Division(db.Model):
-    __tablename__ = 'divisions'
-    id = db.Column(db.Integer, primary_key=True)
-    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
-    name = db.Column(db.String(10), nullable=False) # 'A', 'B'
-
-    students = db.relationship('Student', backref='division', lazy=True)
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -51,7 +42,6 @@ class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
-    division_id = db.Column(db.Integer, db.ForeignKey('divisions.id'), nullable=True)
     academic_year = db.Column(db.String(30), nullable=False) # FE, SE, TE, BE
     roll_number = db.Column(db.String(30), nullable=True)
 
@@ -103,7 +93,6 @@ class Note(db.Model):
     uploader_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     uploader_role = db.Column(db.String(20), nullable=False) # 'student' or 'faculty'
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
-    division_id = db.Column(db.Integer, db.ForeignKey('divisions.id'), nullable=True)
     academic_year = db.Column(db.String(30), nullable=True)
     title = db.Column(db.String(150), nullable=False)
     subject = db.Column(db.String(100), nullable=False)
@@ -112,7 +101,6 @@ class Note(db.Model):
     is_faculty_note = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    division = db.relationship('Division', foreign_keys=[division_id])
     shares = db.relationship('NoteShare', backref='note', lazy=True, cascade="all, delete-orphan")
 
 class NoteShare(db.Model):
@@ -169,7 +157,6 @@ class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     faculty_id = db.Column(db.Integer, db.ForeignKey('faculty.id'), nullable=False)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
-    division_id = db.Column(db.Integer, db.ForeignKey('divisions.id'), nullable=True)
     academic_year = db.Column(db.String(30), nullable=True)
     title = db.Column(db.String(150), nullable=False)
     subject = db.Column(db.String(100), nullable=False)
@@ -179,7 +166,6 @@ class Assignment(db.Model):
     max_marks = db.Column(db.Integer, default=100)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    division = db.relationship('Division', foreign_keys=[division_id])
     submissions = db.relationship('AssignmentSubmission', backref='assignment', lazy=True, cascade="all, delete-orphan")
 
 class AssignmentSubmission(db.Model):
@@ -199,7 +185,6 @@ class Notice(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     notice_type = db.Column(db.String(20), nullable=False) # 'academic' or 'club'
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=True) # None = all depts
-    division_id = db.Column(db.Integer, db.ForeignKey('divisions.id'), nullable=True)
     academic_year = db.Column(db.String(30), nullable=True)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=True)
     title = db.Column(db.String(150), nullable=False)
@@ -209,14 +194,12 @@ class Notice(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     author = db.relationship('User', foreign_keys=[author_id])
-    division = db.relationship('Division', foreign_keys=[division_id])
 
 class Quiz(db.Model):
     __tablename__ = 'quizzes'
     id = db.Column(db.Integer, primary_key=True)
     faculty_id = db.Column(db.Integer, db.ForeignKey('faculty.id'), nullable=False)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
-    division_id = db.Column(db.Integer, db.ForeignKey('divisions.id'), nullable=True)
     academic_year = db.Column(db.String(30), nullable=True)
     title = db.Column(db.String(150), nullable=False)
     subject = db.Column(db.String(100), nullable=False)
@@ -225,7 +208,6 @@ class Quiz(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    division = db.relationship('Division', foreign_keys=[division_id])
     questions = db.relationship('QuizQuestion', backref='quiz', lazy=True, cascade="all, delete-orphan")
     attempts = db.relationship('QuizAttempt', backref='quiz', lazy=True, cascade="all, delete-orphan")
 

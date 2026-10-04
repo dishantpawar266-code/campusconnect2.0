@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from werkzeug.utils import secure_filename
 from database import db
 from models import (
-    User, Student, Faculty, Club, Department, Division, Task, Note, NoteShare,
+    User, Student, Faculty, Club, Department, Task, Note, NoteShare,
     Friendship, Doubt, DoubtReply, Assignment, AssignmentSubmission,
     Notice, Quiz, QuizQuestion, QuizAttempt, ExternalResource
 )
@@ -27,10 +27,8 @@ def dashboard():
     # Data queries for Student
     tasks = Task.query.filter_by(student_id=student.id).order_by(Task.is_completed.asc(), Task.due_date.asc()).all()
 
-    # Notes: Targeted to Student's Dept + Division + Year (or All)
+    # Notes: Targeted to Student's Dept + Year (or All)
     faculty_notes = Note.query.filter_by(department_id=department.id, is_faculty_note=True).filter(
-        (Note.division_id == None) | (Note.division_id == student.division_id)
-    ).filter(
         (Note.academic_year == None) | (Note.academic_year == student.academic_year)
     ).order_by(Note.created_at.desc()).all()
 
@@ -45,10 +43,8 @@ def dashboard():
     # Student Doubts
     doubts = Doubt.query.filter_by(student_id=student.id).order_by(Doubt.created_at.desc()).all()
 
-    # Department & Division Assignments
+    # Department Assignments
     assignments = Assignment.query.filter_by(department_id=department.id).filter(
-        (Assignment.division_id == None) | (Assignment.division_id == student.division_id)
-    ).filter(
         (Assignment.academic_year == None) | (Assignment.academic_year == student.academic_year)
     ).order_by(Assignment.deadline.asc()).all()
 
@@ -58,8 +54,6 @@ def dashboard():
     academic_notices = Notice.query.filter_by(notice_type='academic').filter(
         (Notice.department_id == None) | (Notice.department_id == department.id)
     ).filter(
-        (Notice.division_id == None) | (Notice.division_id == student.division_id)
-    ).filter(
         (Notice.academic_year == None) | (Notice.academic_year == student.academic_year)
     ).order_by(Notice.created_at.desc()).all()
 
@@ -67,8 +61,6 @@ def dashboard():
 
     # Active Quizzes
     active_quizzes = Quiz.query.filter_by(department_id=department.id, is_active=True).filter(
-        (Quiz.division_id == None) | (Quiz.division_id == student.division_id)
-    ).filter(
         (Quiz.academic_year == None) | (Quiz.academic_year == student.academic_year)
     ).order_by(Quiz.created_at.desc()).all()
 
@@ -80,7 +72,7 @@ def dashboard():
     # External Resources
     external_resources = ExternalResource.query.all()
 
-    # Classmates in same department and division
+    # Classmates in same department
     classmates = Student.query.filter(
         Student.department_id == department.id,
         Student.id != student.id
@@ -199,7 +191,6 @@ def upload_note():
             uploader_id=user.id,
             uploader_role='student',
             department_id=student.department_id,
-            division_id=student.division_id,
             academic_year=student.academic_year,
             title=title,
             subject=subject,

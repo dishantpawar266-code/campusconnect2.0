@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from werkzeug.utils import secure_filename
 from database import db
 from models import (
-    User, Faculty, Student, Department, Division, Note, Doubt, DoubtReply,
+    User, Faculty, Student, Department, Note, Doubt, DoubtReply,
     Assignment, AssignmentSubmission, Notice, Quiz, QuizQuestion, QuizAttempt
 )
 from routes.auth import login_required, role_required
@@ -32,7 +32,6 @@ def dashboard():
     dept_students = Student.query.filter_by(department_id=department.id).all()
 
     departments = Department.query.all()
-    divisions = Division.query.all()
 
     return render_template(
         'faculty_dashboard.html',
@@ -45,8 +44,7 @@ def dashboard():
         doubts=doubts,
         quizzes=quizzes,
         dept_students=dept_students,
-        departments=departments,
-        divisions=divisions
+        departments=departments
     )
 
 # --- 1. FACULTY NOTES ---
@@ -61,10 +59,8 @@ def upload_note():
     subject = request.form.get('subject', '').strip()
     description = request.form.get('description', '').strip()
     target_dept_id = request.form.get('department_id', faculty.department_id)
-    division_id = request.form.get('division_id')
     academic_year = request.form.get('academic_year')
 
-    div_id = int(division_id) if division_id and division_id != 'all' else None
     year = academic_year if academic_year and academic_year != 'all' else None
 
     file = request.files.get('file')
@@ -81,7 +77,6 @@ def upload_note():
             uploader_id=user.id,
             uploader_role='faculty',
             department_id=int(target_dept_id),
-            division_id=div_id,
             academic_year=year,
             title=title,
             subject=subject,
@@ -111,10 +106,8 @@ def create_assignment():
     deadline_str = request.form.get('deadline')
     max_marks = request.form.get('max_marks', 100)
     target_dept_id = request.form.get('department_id', faculty.department_id)
-    division_id = request.form.get('division_id')
     academic_year = request.form.get('academic_year')
 
-    div_id = int(division_id) if division_id and division_id != 'all' else None
     year = academic_year if academic_year and academic_year != 'all' else None
 
     file = request.files.get('file')
@@ -135,7 +128,6 @@ def create_assignment():
         asgn = Assignment(
             faculty_id=faculty.id,
             department_id=int(target_dept_id),
-            division_id=div_id,
             academic_year=year,
             title=title,
             subject=subject,
@@ -183,12 +175,10 @@ def create_notice():
     title = request.form.get('title', '').strip()
     content = request.form.get('content', '').strip()
     department_id = request.form.get('department_id')
-    division_id = request.form.get('division_id')
     academic_year = request.form.get('academic_year')
     event_date_str = request.form.get('event_date')
 
     dept_id = int(department_id) if department_id and department_id != 'all' else None
-    div_id = int(division_id) if division_id and division_id != 'all' else None
     year = academic_year if academic_year and academic_year != 'all' else None
 
     event_date = None
@@ -212,7 +202,6 @@ def create_notice():
             author_id=user.id,
             notice_type='academic',
             department_id=dept_id,
-            division_id=div_id,
             academic_year=year,
             title=title,
             content=content,
@@ -272,10 +261,8 @@ def create_quiz():
     subject = request.form.get('subject', '').strip()
     time_limit = request.form.get('time_limit_minutes', 15)
     target_dept_id = request.form.get('department_id', faculty.department_id)
-    division_id = request.form.get('division_id')
     academic_year = request.form.get('academic_year')
 
-    div_id = int(division_id) if division_id and division_id != 'all' else None
     year = academic_year if academic_year and academic_year != 'all' else None
 
     q_texts = request.form.getlist('q_text[]')
@@ -290,7 +277,6 @@ def create_quiz():
         quiz = Quiz(
             faculty_id=faculty.id,
             department_id=int(target_dept_id),
-            division_id=div_id,
             academic_year=year,
             title=title,
             subject=subject,

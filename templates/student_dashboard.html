@@ -3,15 +3,11 @@
 {% block title %}Student Dashboard - Campus Connect{% endblock %}
 
 {% block page_heading %}Student Command Center{% endblock %}
-{% block page_subheading %}Academic Hub for {{ student.user.full_name }} ({{ department.code }}{% if student.division %}
-- Division {{ student.division.name }}{% endif %}){% endblock %}
+{% block page_subheading %}Academic Hub for {{ student.user.full_name }} ({{ department.code }}){% endblock %}
 
 {% block header_badges %}
 <span class="dept-badge"><i class="fa-solid fa-building-columns"></i> {{ department.code }}</span>
 <span class="badge badge-blue"><i class="fa-solid fa-user-graduate"></i> {{ student.academic_year }}</span>
-{% if student.division %}
-<span class="badge badge-purple"><i class="fa-solid fa-layer-group"></i> Div {{ student.division.name }}</span>
-{% endif %}
 {% endblock %}
 
 {% block sidebar_nav %}
@@ -118,7 +114,7 @@
         </button>
     </div>
 
-    <!-- Section A: Official Faculty Notes -->
+    <!-- Published Faculty Notes -->
     <h3
         style="font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
         <i class="fa-solid fa-award" style="color: var(--accent-teal);"></i> Published Faculty Notes ({{ department.code
@@ -157,7 +153,7 @@
         {% endif %}
     </div>
 
-    <!-- Section B: Own & Shared Notes -->
+    <!-- My Uploads & Shared Notes -->
     <h3
         style="font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
         <i class="fa-solid fa-folder-user" style="color: var(--accent-purple);"></i> My Uploads & Shared Notes
