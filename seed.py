@@ -84,7 +84,7 @@ def seed_database():
             dept.description = desc
 
     # Seed Developer / Owner Admin Account if not exists
-    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@rcpit.ac.in').lower().strip()
+    admin_email = os.environ.get('ADMIN_EMAIL', 'dishantpawar04@gmail.com').lower().strip()
     admin_password = os.environ.get('ADMIN_PASSWORD', 'Admin@Campus2026!')
 
     admin_user = User.query.filter_by(role='admin').first()

@@ -49,7 +49,7 @@ def login():
         password = request.form.get('password', '')
 
         env_admin_password = os.environ.get('ADMIN_PASSWORD', 'Admin@Campus2026!')
-        env_admin_email = os.environ.get('ADMIN_EMAIL', 'admin@rcpit.ac.in').lower().strip()
+        env_admin_email = os.environ.get('ADMIN_EMAIL', 'dishantpawar04@gmail.com').lower().strip()
 
         user = User.query.filter_by(email=email).first() if email else None
         if not user:

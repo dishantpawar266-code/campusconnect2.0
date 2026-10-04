@@ -58,7 +58,7 @@ class CampusConnectRealDataTestCase(unittest.TestCase):
 
         # 3. Authenticate as Developer Admin using ADMIN_PASSWORD env var
         res = client.post('/admin/login', data={
-            'email': 'admin@rcpit.ac.in',
+            'email': os.environ.get('ADMIN_EMAIL', 'dishantpawar04@gmail.com'),
             'password': os.environ.get('ADMIN_PASSWORD', 'Admin@Campus2026!')
         }, follow_redirects=True)
         self.assertIn(b'Production Overview', res.data)
@@ -79,7 +79,7 @@ class CampusConnectRealDataTestCase(unittest.TestCase):
 
         # 2. Login as Developer Admin
         client.post('/admin/login', data={
-            'email': 'admin@rcpit.ac.in',
+            'email': os.environ.get('ADMIN_EMAIL', 'dishantpawar04@gmail.com'),
             'password': os.environ.get('ADMIN_PASSWORD', 'Admin@Campus2026!')
         }, follow_redirects=True)
 
@@ -119,7 +119,7 @@ class CampusConnectRealDataTestCase(unittest.TestCase):
 
         # 6. Re-authenticate as Admin & Activate Student
         client.post('/admin/login', data={
-            'email': 'admin@rcpit.ac.in',
+            'email': os.environ.get('ADMIN_EMAIL', 'dishantpawar04@gmail.com'),
             'password': os.environ.get('ADMIN_PASSWORD', 'Admin@Campus2026!')
         }, follow_redirects=True)
 
