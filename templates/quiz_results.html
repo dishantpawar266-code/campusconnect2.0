@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Results: {{ quiz.title }}{% endblock %}
+
+{% block page_heading %}Quiz Score Summary{% endblock %}
+{% block page_subheading %}{{ quiz.title }} &bull; Submitted on {{ attempt.completed_at.strftime('%B %d, %Y %H:%M') }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 850px; margin: 0 auto;">
+
+    <!-- Score Summary Banner -->
+    <div class="card" style="text-align: center; padding: 40px; margin-bottom: 32px; background: linear-gradient(135deg, #0f172a, #1e293b); color: #ffffff;">
+        <span class="badge badge-teal" style="font-size: 0.85rem; padding: 6px 14px; margin-bottom: 16px;">
+            {{ quiz.subject }}
+        </span>
+        <h2 style="font-size: 2rem; font-weight: 800; color: #ffffff; margin-bottom: 8px;">{{ quiz.title }}</h2>
+        <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 24px;">Your Performance Breakdown</p>
+
+        <div style="display: flex; justify-content: center; align-items: center; gap: 24px;">
+            <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: var(--radius-lg); padding: 20px 36px;">
+                <div style="font-size: 3rem; font-weight: 800; color: #38bdf8;">
+                    {{ attempt.score }} <span style="font-size: 1.5rem; color: #94a3b8;">/ {{ attempt.total_possible }}</span>
+                </div>
+                <div style="font-size: 0.82rem; color: #cbd5e1; font-weight: 700; text-transform: uppercase;">Marks Earned</div>
+            </div>
+
+            <div style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: var(--radius-lg); padding: 20px 36px;">
+                {% set pct = (attempt.score / attempt.total_possible * 100) if attempt.total_possible > 0 else 0 %}
+                <div style="font-size: 3rem; font-weight: 800; color: {% if pct >= 70 %}#4ade80{% elif pct >= 50 %}#fbbf24{% else %}#f87171{% endif %};">
+                    {{ pct | round(1) }}%
+                </div>
+                <div style="font-size: 0.82rem; color: #cbd5e1; font-weight: 700; text-transform: uppercase;">Score Percentage</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Answers Review -->
+    <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+        <i class="fa-solid fa-list-check" style="color: var(--accent-teal);"></i> Detailed Answer Review
+    </h3>
+
+    {% for question in quiz.questions %}
+    {% set user_ans = user_answers.get(question.id|string) %}
+    {% set is_correct = (user_ans and user_ans.upper() == question.correct_option.upper()) %}
+
+    <div class="card" style="margin-bottom: 20px; border-left: 4px solid {% if is_correct %}var(--accent-teal){% else %}var(--accent-rose){% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <div style="font-weight: 800; font-size: 1.05rem;">
+                Question {{ loop.index }}: {{ question.question_text }}
+            </div>
+            <span class="badge {% if is_correct %}badge-teal{% else %}badge-rose{% endif %}">
+                {% if is_correct %}<i class="fa-solid fa-check"></i> Correct (+{{ question.marks }}){% else %}<i class="fa-solid fa-xmark"></i> Incorrect{% endif %}
+            </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; margin-bottom: 12px;">
+            <div style="padding: 10px 14px; border-radius: var(--radius-sm); background: {% if question.correct_option == 'A' %}#dcfce7{% elif user_ans == 'A' %}#fee2e2{% else %}#f8fafc{% endif %};">
+                <strong>A.</strong> {{ question.option_a }}
+            </div>
+            <div style="padding: 10px 14px; border-radius: var(--radius-sm); background: {% if question.correct_option == 'B' %}#dcfce7{% elif user_ans == 'B' %}#fee2e2{% else %}#f8fafc{% endif %};">
+                <strong>B.</strong> {{ question.option_b }}
+            </div>
+            <div style="padding: 10px 14px; border-radius: var(--radius-sm); background: {% if question.correct_option == 'C' %}#dcfce7{% elif user_ans == 'C' %}#fee2e2{% else %}#f8fafc{% endif %};">
+                <strong>C.</strong> {{ question.option_c }}
+            </div>
+            <div style="padding: 10px 14px; border-radius: var(--radius-sm); background: {% if question.correct_option == 'D' %}#dcfce7{% elif user_ans == 'D' %}#fee2e2{% else %}#f8fafc{% endif %};">
+                <strong>D.</strong> {{ question.option_d }}
+            </div>
+        </div>
+
+        <div style="font-size: 0.82rem; color: var(--text-secondary); border-top: 1px solid #f1f5f9; padding-top: 10px;">
+            Your Answer: <strong>{{ user_ans or 'Not Answered' }}</strong> &bull; Correct Answer: <strong style="color: var(--accent-teal);">Option {{ question.correct_option }}</strong>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div style="text-align: center; margin-top: 32px;">
+        <a href="{{ url_for('auth.dashboard') }}" class="btn btn-primary btn-lg">
+            &larr; Back to Student Dashboard
+        </a>
+    </div>
+
+</div>
+{% endblock %}

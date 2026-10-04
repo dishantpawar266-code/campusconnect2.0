@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+
+{% block title %}RCPIT Campus Connect - Official Portal{% endblock %}
+
+{% block public_content %}
+<div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; align-items: start;" class="login-split-grid">
+
+    <!-- LEFT SIDE: REAL RCPIT COLLEGE IMAGE & VALUE PROPOSITION -->
+    <div>
+        <!-- RCPIT Real College Campus Image Banner -->
+        <div style="position: relative; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); margin-bottom: 24px; border: 1px solid var(--border-color);">
+            <img src="{{ url_for('static', filename='images/rcpit_campus.jpg') }}" alt="R. C. Patel Institute of Technology Campus Building" style="width: 100%; height: 320px; object-fit: cover; display: block;">
+            
+            <!-- Subtle Image Gradient Overlay -->
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0)); padding: 24px 24px 16px; color: #ffffff;">
+                <div style="font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; color: #38bdf8; text-transform: uppercase; margin-bottom: 4px;">
+                    R. C. Patel Institute of Technology, Shirpur
+                </div>
+                <div style="font-size: 1.15rem; font-weight: 800; color: #ffffff;">
+                    Campus Building & Academic Infrastructure
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcome Text Header -->
+        <div style="margin-bottom: 24px;">
+            <div style="display: inline-block; padding: 5px 12px; background: #ccfbf1; color: #0f766e; border-radius: 16px; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">
+                WELCOME TO
+            </div>
+            <h1 style="font-size: 2.3rem; font-weight: 800; line-height: 1.18; color: #0f172a; margin-bottom: 10px; letter-spacing: -0.03em;">
+                RCPIT CAMPUS CONNECT
+            </h1>
+            <div style="font-size: 1.2rem; font-weight: 700; color: #0d9488; margin-bottom: 14px;">
+                "Your Campus. Connected."
+            </div>
+            <p style="font-size: 0.95rem; color: #475569; line-height: 1.65; margin-bottom: 24px;">
+                Bringing students, faculty and campus clubs together on one organized digital platform for learning, communication and collaboration.
+            </p>
+        </div>
+
+        <!-- 3 Compact Feature Cards -->
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="card" style="display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px; border-left: 4px solid #0d9488;">
+                <div style="width: 42px; height: 42px; background: #ccfbf1; color: #0f766e; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+                <div>
+                    <h4 style="font-size: 0.98rem; font-weight: 800; color: #0f172a;">1. TASK PLANNER & NOTES</h4>
+                    <p style="font-size: 0.84rem; color: #64748b; margin-top: 2px;">Plan tasks, manage deadlines and share notes.</p>
+                </div>
+            </div>
+
+            <div class="card" style="display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px; border-left: 4px solid #2563eb;">
+                <div style="width: 42px; height: 42px; background: #dbeafe; color: #1d4ed8; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+                <div>
+                    <h4 style="font-size: 0.98rem; font-weight: 800; color: #0f172a;">2. FACULTY CONNECTION</h4>
+                    <p style="font-size: 0.84rem; color: #64748b; margin-top: 2px;">Ask doubts, access assignments and stay connected with faculty.</p>
+                </div>
+            </div>
+
+            <div class="card" style="display: flex; align-items: flex-start; gap: 16px; padding: 16px 20px; border-left: 4px solid #7c3aed;">
+                <div style="width: 42px; height: 42px; background: #f3e8ff; color: #6d28d9; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div>
+                    <h4 style="font-size: 0.98rem; font-weight: 800; color: #0f172a;">3. CLUBS & CAMPUS</h4>
+                    <p style="font-size: 0.84rem; color: #64748b; margin-top: 2px;">Discover club announcements, activities and campus opportunities.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT SIDE: PREMIUM GLASS / WHITE LOGIN CARD -->
+    <div class="card" style="padding: 32px; box-shadow: var(--shadow-lg); border-top: 4px solid #0d9488; background: #ffffff;">
+
+        <!-- Three Role Selection Tabs -->
+        <div style="display: flex; background: #f1f5f9; padding: 5px; border-radius: var(--radius-md); margin-bottom: 24px;">
+            <button type="button" class="tab-btn active" onclick="switchRoleTab('student-login')" id="tab-student-btn" style="flex: 1; padding: 11px 6px; border: none; background: #ffffff; border-radius: var(--radius-sm); font-weight: 800; font-size: 0.88rem; cursor: pointer; color: #0d9488; box-shadow: var(--shadow-sm); transition: var(--transition);">
+                🎓 Student
+            </button>
+            <button type="button" class="tab-btn" onclick="switchRoleTab('faculty-login')" id="tab-faculty-btn" style="flex: 1; padding: 11px 6px; border: none; background: transparent; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.88rem; cursor: pointer; color: #64748b; transition: var(--transition);">
+                👨‍🏫 Faculty
+            </button>
+            <button type="button" class="tab-btn" onclick="switchRoleTab('club-login')" id="tab-club-btn" style="flex: 1; padding: 11px 6px; border: none; background: transparent; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.88rem; cursor: pointer; color: #64748b; transition: var(--transition);">
+                👥 Club Leader
+            </button>
+        </div>
+
+        <!-- 1. STUDENT LOGIN FORM -->
+        <div id="student-login" class="role-form-block">
+            <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Student Login</h3>
+            <p style="font-size: 0.86rem; color: #64748b; margin-bottom: 22px;">Access your academic resources, tasks, notes and more.</p>
+
+            <form action="{{ url_for('auth.login') }}" method="POST">
+                <input type="hidden" name="role" value="student">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="student@rcpit.ac.in" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; min-height: 46px;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login as Student
+                </button>
+            </form>
+
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; text-align: center; font-size: 0.86rem;">
+                <span style="color: #64748b;">New to Campus Connect?</span>
+                <button type="button" onclick="switchRoleTab('student-register')" style="background: none; border: none; color: #0d9488; font-weight: 800; cursor: pointer; text-decoration: underline; margin-left: 4px;">
+                    Register Student Account
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. FACULTY LOGIN FORM -->
+        <div id="faculty-login" class="role-form-block" style="display: none;">
+            <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Faculty Login</h3>
+            <p style="font-size: 0.86rem; color: #64748b; margin-bottom: 22px;">Manage courses, assignments, notices, and student doubts.</p>
+
+            <form action="{{ url_for('auth.login') }}" method="POST">
+                <input type="hidden" name="role" value="faculty">
+                <div class="form-group">
+                    <label class="form-label">Faculty Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="faculty@rcpit.ac.in" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; min-height: 46px;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login as Faculty
+                </button>
+            </form>
+
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; text-align: center; font-size: 0.86rem;">
+                <span style="color: #64748b;">Joining as Faculty Member?</span>
+                <button type="button" onclick="switchRoleTab('faculty-register')" style="background: none; border: none; color: #0d9488; font-weight: 800; cursor: pointer; text-decoration: underline; margin-left: 4px;">
+                    Register Faculty Account
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. CLUB LEADER LOGIN FORM -->
+        <div id="club-login" class="role-form-block" style="display: none;">
+            <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Club Leader Login</h3>
+            <p style="font-size: 0.86rem; color: #64748b; margin-bottom: 22px;">Publish club events and respond to student queries.</p>
+
+            <form action="{{ url_for('auth.login') }}" method="POST">
+                <input type="hidden" name="role" value="club_leader">
+                <div class="form-group">
+                    <label class="form-label">Select Club</label>
+                    <select name="club_id" class="form-control" required>
+                        <option value="">-- Choose Your Campus Club --</option>
+                        {% for club in clubs %}
+                            <option value="{{ club.id }}">{{ club.name }} ({{ club.category }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Leader Secret Passcode</label>
+                    <input type="password" name="passcode" class="form-control" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; min-height: 46px;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login as Club Leader
+                </button>
+            </form>
+
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; text-align: center; font-size: 0.86rem;">
+                <span style="color: #64748b;">Want to Register a New Campus Club?</span>
+                <button type="button" onclick="switchRoleTab('club-register')" style="background: none; border: none; color: #0d9488; font-weight: 800; cursor: pointer; text-decoration: underline; margin-left: 4px;">
+                    Register New Club
+                </button>
+            </div>
+        </div>
+
+        <!-- 4. STUDENT REGISTRATION SUB-VIEW -->
+        <div id="student-register" class="role-form-block" style="display: none;">
+            <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Student Registration</h3>
+            <p style="font-size: 0.86rem; color: #64748b; margin-bottom: 22px;">Create your RCPIT student account.</p>
+
+            <form action="{{ url_for('auth.register_student') }}" method="POST">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="full_name" class="form-control" placeholder="e.g. Dishant Pawar" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="student@rcpit.ac.in" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <select name="department_id" id="reg-dept-select" class="form-control" required onchange="loadDivisionsForDepartment(this.value)">
+                        <option value="">-- Select Department --</option>
+                        {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }} ({{ dept.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Academic Year</label>
+                    <select name="academic_year" class="form-control" required>
+                        <option value="First Year (FE)">First Year (FE)</option>
+                        <option value="Second Year (SE)">Second Year (SE)</option>
+                        <option value="Third Year (TE)" selected>Third Year (TE)</option>
+                        <option value="Final Year (BE)">Final Year (BE)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Division</label>
+                    <select name="division_id" id="reg-div-select" class="form-control" required>
+                        <option value="">-- Select Department First --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Roll / PRN Number (Optional)</label>
+                    <input type="text" name="roll_number" class="form-control" placeholder="e.g. 21AIML042">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; min-height: 46px;">
+                    <i class="fa-solid fa-user-plus"></i> Complete Student Registration
+                </button>
+            </form>
+
+            <div style="margin-top: 20px; text-align: center; font-size: 0.86rem;">
+                <button type="button" onclick="switchRoleTab('student-login')" style="background: none; border: none; color: #0d9488; font-weight: 800; cursor: pointer;">
+                    &larr; Back to Student Login
+                </button>
+            </div>
+        </div>
+
+        <!-- 5. FACULTY REGISTRATION SUB-VIEW -->
+        <div id="faculty-register" class="role-form-block" style="display: none;">
+            <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Faculty Registration</h3>
+            <p style="font-size: 0.86rem; color: #64748b; margin-bottom: 22px;">Join as a faculty member to manage courses.</p>
+
+            <form action="{{ url_for('auth.register_faculty') }}" method="POST">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="full_name" class="form-control" placeholder="e.g. Dr. Rajesh Sharma" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Faculty Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="faculty@rcpit.ac.in" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <select name="department_id" class="form-control" required>
+                        <option value="">-- Select Department --</option>
+                        {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }} ({{ dept.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Designation</label>
+                    <select name="designation" class="form-control" required>
+                        <option value="Assistant Professor">Assistant Professor</option>
+                        <option value="Associate Professor">Associate Professor</option>
+                        <option value="Professor">Professor</option>
+                        <option value="Head of Department (HOD)">Head of Department (HOD)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Specialization / Subjects</label>
+                    <input type="text" name="specialization" class="form-control" placeholder="e.g. Deep Learning, Algorithms">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; min-height: 46px;">
+                    <i class="fa-solid fa-user-tie"></i> Complete Faculty Registration
+                </button>
+            </form>
+
+            <div style="margin-top: 20px; text-align: center; font-size: 0.86rem;">
+                <button type="button" onclick="switchRoleTab('faculty-login')" style="background: none; border: none; color: #0d9488; font-weight: 800; cursor: pointer;">
+                    &larr; Back to Faculty Login
+                </button>
+            </div>
+        </div>
+
+        <!-- 6. CLUB REGISTRATION SUB-VIEW -->
+        <div id="club-register" class="role-form-block" style="display: none;">
+            <h3 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Register Campus Club</h3>
+            <p style="font-size: 0.86rem; color: #64748b; margin-bottom: 22px;">Register a new student club or campus society.</p>
+
+            <form action="{{ url_for('auth.register_club') }}" method="POST">
+                <div class="form-group">
+                    <label class="form-label">Club Name</label>
+                    <input type="text" name="club_name" class="form-control" placeholder="e.g. AI & Robotics Society" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Club Email</label>
+                    <input type="email" name="email" class="form-control" placeholder="club_ai@rcpit.ac.in" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Leader Name</label>
+                    <input type="text" name="leader_name" class="form-control" placeholder="e.g. Aarav Shah" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Secret Leader Passcode</label>
+                    <input type="password" name="passcode" class="form-control" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-control" required>
+                        <option value="Technical">Technical</option>
+                        <option value="Cultural">Cultural</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Literature">Literature</option>
+                        <option value="Social">Social</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department Association (Optional)</label>
+                    <select name="department_id" class="form-control">
+                        <option value="all">All Departments / College-wide</option>
+                        {% for dept in departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Club Description</label>
+                    <textarea name="description" class="form-control" placeholder="Brief description of club activities..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; min-height: 46px;">
+                    <i class="fa-solid fa-flag"></i> Complete Club Registration
+                </button>
+            </form>
+
+            <div style="margin-top: 20px; text-align: center; font-size: 0.86rem;">
+                <button type="button" onclick="switchRoleTab('club-login')" style="background: none; border: none; color: #0d9488; font-weight: 800; cursor: pointer;">
+                    &larr; Back to Club Login
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+@media (max-width: 900px) {
+    .login-split-grid {
+        grid-template-columns: 1fr !important;
+        gap: 24px !important;
+    }
+    .desktop-only-nav {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+function switchRoleTab(tabId) {
+    document.querySelectorAll('.role-form-block').forEach(b => b.style.display = 'none');
+    document.getElementById(tabId).style.display = 'block';
+
+    const btnStudent = document.getElementById('tab-student-btn');
+    const btnFaculty = document.getElementById('tab-faculty-btn');
+    const btnClub = document.getElementById('tab-club-btn');
+
+    [btnStudent, btnFaculty, btnClub].forEach(btn => {
+        btn.style.background = 'transparent';
+        btn.style.color = '#64748b';
+        btn.style.boxShadow = 'none';
+        btn.style.fontWeight = '700';
+    });
+
+    if (tabId.startsWith('student')) {
+        btnStudent.style.background = '#ffffff';
+        btnStudent.style.color = '#0d9488';
+        btnStudent.style.boxShadow = 'var(--shadow-sm)';
+        btnStudent.style.fontWeight = '800';
+    } else if (tabId.startsWith('faculty')) {
+        btnFaculty.style.background = '#ffffff';
+        btnFaculty.style.color = '#0d9488';
+        btnFaculty.style.boxShadow = 'var(--shadow-sm)';
+        btnFaculty.style.fontWeight = '800';
+    } else if (tabId.startsWith('club')) {
+        btnClub.style.background = '#ffffff';
+        btnClub.style.color = '#0d9488';
+        btnClub.style.boxShadow = 'var(--shadow-sm)';
+        btnClub.style.fontWeight = '800';
+    }
+}
+
+function loadDivisionsForDepartment(deptId) {
+    const divSelect = document.getElementById('reg-div-select');
+    divSelect.innerHTML = '<option value="">Loading divisions...</option>';
+
+    if (!deptId) {
+        divSelect.innerHTML = '<option value="">-- Select Department First --</option>';
+        return;
+    }
+
+    fetch('/api/divisions/' + deptId)
+        .then(res => res.json())
+        .then(divisions => {
+            divSelect.innerHTML = '';
+            if (divisions.length === 0) {
+                divSelect.innerHTML = '<option value="">No specific divisions</option>';
+            } else {
+                divisions.forEach(div => {
+                    const opt = document.createElement('option');
+                    opt.value = div.id;
+                    opt.textContent = 'Division ' + div.name;
+                    divSelect.appendChild(opt);
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Error fetching divisions:', err);
+            divSelect.innerHTML = '<option value="">Error loading divisions</option>';
+        });
+}
+</script>
+{% endblock %}

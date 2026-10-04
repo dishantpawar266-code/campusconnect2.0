@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}403 - Access Forbidden{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 60px auto; text-align: center; padding: 48px;">
+    <div style="font-size: 4rem; color: var(--accent-rose); margin-bottom: 16px;">
+        <i class="fa-solid fa-lock"></i>
+    </div>
+    <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 8px;">403 - Access Restricted</h1>
+    <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 24px;">
+        You do not have authorization to access this feature or role-restricted page.
+    </p>
+    <a href="{{ url_for('auth.dashboard') }}" class="btn btn-primary">
+        &larr; Return to Dashboard
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}{{ notice.title }} - Notice Details{% endblock %}
+
+{% block page_heading %}Notice Details{% endblock %}
+{% block page_subheading %}Published on {{ notice.created_at.strftime('%B %d, %Y') }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto; padding: 36px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+        <span class="badge {% if notice.notice_type == 'academic' %}badge-blue{% else %}badge-purple{% endif %}" style="font-size: 0.85rem; padding: 6px 14px;">
+            <i class="fa-solid {% if notice.notice_type == 'academic' %}fa-graduation-cap{% else %}fa-flag{% endif %}"></i>
+            {{ notice.notice_type.title() }} Notice
+        </span>
+        {% if notice.event_date %}
+        <span class="badge badge-amber" style="font-size: 0.85rem; padding: 6px 14px;">
+            <i class="fa-regular fa-calendar"></i> Event Date: {{ notice.event_date.strftime('%B %d, %Y') }}
+        </span>
+        {% endif %}
+    </div>
+
+    <h1 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 16px; color: var(--text-primary);">
+        {{ notice.title }}
+    </h1>
+
+    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+        Published by <strong>{{ notice.author.full_name }}</strong>
+        {% if notice.club %} ({{ notice.club.name }}){% endif %}
+        &bull; Target Department: {% if notice.department %}{{ notice.department.name }}{% else %}All Departments{% endif %}
+    </div>
+
+    <div style="font-size: 1.05rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: 32px; white-space: pre-wrap;">
+        {{ notice.content }}
+    </div>
+
+    {% if notice.attachment_path %}
+    <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa-solid fa-paperclip" style="font-size: 1.4rem; color: var(--accent-teal);"></i>
+            <div>
+                <div style="font-weight: 700; font-size: 0.92rem;">Official Attachment File</div>
+                <div style="font-size: 0.78rem; color: var(--text-muted);">Available for download</div>
+            </div>
+        </div>
+        <a href="{{ url_for('student.download_file', filename=notice.attachment_path) }}" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-download"></i> Download Attachment
+        </a>
+    </div>
+    {% endif %}
+
+    <div style="border-top: 1px solid var(--border-color); padding-top: 20px;">
+        <a href="{{ url_for('auth.dashboard') }}" class="btn btn-secondary">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

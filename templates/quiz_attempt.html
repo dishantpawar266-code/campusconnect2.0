@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Attempt Quiz: {{ quiz.title }}{% endblock %}
+
+{% block page_heading %}Live Online Quiz{% endblock %}
+{% block page_subheading %}{{ quiz.subject }} &bull; {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="quiz-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--border-color);">
+        <div>
+            <span class="badge badge-teal" style="font-size: 0.85rem;">{{ quiz.subject }}</span>
+            <h2 style="font-size: 1.5rem; font-weight: 800; margin-top: 6px;">{{ quiz.title }}</h2>
+        </div>
+        <!-- Live Countdown Timer -->
+        <div style="background: #fef3c7; border: 1.5px solid #fde68a; color: #b45309; padding: 10px 18px; border-radius: var(--radius-md); font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-hourglass-half"></i>
+            <span id="quiz-timer">--:--</span>
+        </div>
+    </div>
+
+    <form id="quiz-attempt-form" action="{{ url_for('student.submit_quiz', quiz_id=quiz.id) }}" method="POST">
+        {% for question in quiz.questions %}
+        <div class="question-box">
+            <div style="font-weight: 800; font-size: 1.05rem; margin-bottom: 14px; color: var(--text-primary); display: flex; gap: 10px;">
+                <span style="color: var(--accent-teal);">Q{{ loop.index }}.</span>
+                <span>{{ question.question_text }}</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label class="option-label">
+                    <input type="radio" name="question_{{ question.id }}" value="A" required>
+                    <span><strong>A.</strong> {{ question.option_a }}</span>
+                </label>
+                <label class="option-label">
+                    <input type="radio" name="question_{{ question.id }}" value="B">
+                    <span><strong>B.</strong> {{ question.option_b }}</span>
+                </label>
+                <label class="option-label">
+                    <input type="radio" name="question_{{ question.id }}" value="C">
+                    <span><strong>C.</strong> {{ question.option_c }}</span>
+                </label>
+                <label class="option-label">
+                    <input type="radio" name="question_{{ question.id }}" value="D">
+                    <span><strong>D.</strong> {{ question.option_d }}</span>
+                </label>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div style="text-align: right; margin-top: 24px;">
+            <button type="submit" class="btn btn-primary btn-lg" onclick="return confirm('Are you sure you want to submit your answers?');">
+                <i class="fa-solid fa-paper-plane"></i> Submit Answers
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Timer Countdown Script
+document.addEventListener('DOMContentLoaded', function () {
+    let timeLimitMinutes = {{ quiz.time_limit_minutes }};
+    let totalSeconds = timeLimitMinutes * 60;
+    const timerDisplay = document.getElementById('quiz-timer');
+    const form = document.getElementById('quiz-attempt-form');
+
+    const interval = setInterval(function () {
+        let minutes = Math.floor(totalSeconds / 60);
+        let seconds = totalSeconds % 60;
+
+        if (minutes < 10) minutes = "0" + minutes;
+        if (seconds < 10) seconds = "0" + seconds;
+
+        timerDisplay.innerText = minutes + ":" + seconds;
+
+        if (totalSeconds <= 0) {
+            clearInterval(interval);
+            alert("Time is up! Submitting your quiz answers automatically.");
+            form.submit();
+        }
+
+        totalSeconds--;
+    }, 1000);
+});
+</script>
+{% endblock %}

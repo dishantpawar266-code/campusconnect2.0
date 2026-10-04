@@ -1,0 +1,675 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Dashboard - Campus Connect{% endblock %}
+
+{% block page_heading %}Faculty Management Portal{% endblock %}
+{% block page_subheading %}{{ faculty.designation }} - {{ department.name }} ({{ department.code }}){% endblock %}
+
+{% block header_badges %}
+<span class="dept-badge"><i class="fa-solid fa-building-columns"></i> {{ department.code }}</span>
+<span class="badge badge-teal"><i class="fa-solid fa-user-tie"></i> Faculty</span>
+{% endblock %}
+
+{% block sidebar_nav %}
+<div class="nav-item active" data-tab="tab-fac-notes">
+    <i class="fa-solid fa-book-bookmark"></i> <span>Faculty Notes</span>
+</div>
+<div class="nav-item" data-tab="tab-fac-assignments">
+    <i class="fa-solid fa-file-signature"></i> <span>Assignments</span>
+</div>
+<div class="nav-item" data-tab="tab-fac-notices">
+    <i class="fa-solid fa-bullhorn"></i> <span>Academic Notices</span>
+</div>
+<div class="nav-item" data-tab="tab-fac-doubts">
+    <i class="fa-solid fa-comments"></i> <span>Student Doubts</span>
+</div>
+<div class="nav-item" data-tab="tab-fac-quizzes">
+    <i class="fa-solid fa-list-check"></i> <span>Quiz Builder & Scores</span>
+</div>
+<div class="nav-item" data-tab="tab-fac-students">
+    <i class="fa-solid fa-users"></i> <span>Class Students</span>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- TAB 1: FACULTY NOTES -->
+<div id="tab-fac-notes" class="tab-pane active">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-book-bookmark"></i> Published Study Materials
+        </div>
+        <button class="btn btn-primary btn-sm" data-modal-target="modal-fac-upload-note">
+            <i class="fa-solid fa-upload"></i> Publish Study Material
+        </button>
+    </div>
+
+    <div class="grid-cols-2">
+        {% if notes %}
+            {% for note in notes %}
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <span class="badge badge-teal">{{ note.subject }}</span>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">{{ note.created_at.strftime('%b %d, %Y') }}</span>
+                </div>
+                <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">{{ note.title }}</h4>
+                <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 14px;">{{ note.description }}</p>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">Target: {{ note.department.code }}</span>
+                    {% if note.file_path %}
+                    <a href="{{ url_for('student.download_file', filename=note.file_path) }}" class="btn btn-outline btn-sm">
+                        <i class="fa-solid fa-download"></i> View File
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card" style="grid-column: span 2; text-align: center; color: var(--text-secondary); padding: 30px;">
+                You haven't published any study materials yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 2: ASSIGNMENTS & EVALUATION -->
+<div id="tab-fac-assignments" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-file-signature"></i> Assignments & Submissions
+        </div>
+        <button class="btn btn-primary btn-sm" data-modal-target="modal-create-asgn">
+            <i class="fa-solid fa-plus"></i> Create Assignment
+        </button>
+    </div>
+
+    <div class="grid-cols-1">
+        {% if assignments %}
+            {% for asgn in assignments %}
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div>
+                        <span class="badge badge-purple">{{ asgn.subject }}</span>
+                        <span style="font-size: 0.82rem; color: var(--text-muted); margin-left: 8px;">
+                            Deadline: {{ asgn.deadline.strftime('%b %d, %Y %H:%M') }} &bull; Max Marks: {{ asgn.max_marks }}
+                        </span>
+                    </div>
+                    <span class="badge badge-teal">{{ asgn.submissions|length }} Submissions Received</span>
+                </div>
+                <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">{{ asgn.title }}</h4>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px;">{{ asgn.description }}</p>
+
+                <!-- Submissions Table -->
+                <h5 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; color: var(--accent-teal);">
+                    Student Submissions List:
+                </h5>
+                {% if asgn.submissions %}
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background: #f8fafc; text-align: left; border-bottom: 1px solid var(--border-color);">
+                                <th style="padding: 8px 12px;">Student Name</th>
+                                <th style="padding: 8px 12px;">Submitted At</th>
+                                <th style="padding: 8px 12px;">Submission Content</th>
+                                <th style="padding: 8px 12px;">Marks / Feedback</th>
+                                <th style="padding: 8px 12px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in asgn.submissions %}
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 10px 12px; font-weight: 700;">{{ sub.student.user.full_name }}</td>
+                                <td style="padding: 10px 12px;">{{ sub.submitted_at.strftime('%b %d, %H:%M') }}</td>
+                                <td style="padding: 10px 12px;">
+                                    {% if sub.submission_text %}{{ sub.submission_text[:40] }}... {% endif %}
+                                    {% if sub.file_path %}
+                                    <a href="{{ url_for('student.download_file', filename=sub.file_path) }}" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.75rem;">
+                                        <i class="fa-solid fa-file"></i> File
+                                    </a>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 10px 12px;">
+                                    {% if sub.marks_obtained is not none %}
+                                    <span style="color: var(--accent-teal); font-weight: 700;">{{ sub.marks_obtained }} / {{ asgn.max_marks }}</span>
+                                    {% else %}
+                                    <span class="badge badge-amber">Ungraded</span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 10px 12px;">
+                                    <button class="btn btn-outline btn-sm" onclick="openEvaluateModal('{{ sub.id }}', '{{ sub.student.user.full_name }}', '{{ asgn.max_marks }}')">
+                                        Evaluate
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">No student submissions yet.</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card" style="text-align: center; color: var(--text-secondary); padding: 30px;">
+                No assignments created yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 3: ACADEMIC NOTICES -->
+<div id="tab-fac-notices" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-bullhorn"></i> Official Academic Notices
+        </div>
+        <button class="btn btn-primary btn-sm" data-modal-target="modal-create-notice">
+            <i class="fa-solid fa-plus"></i> Publish Academic Notice
+        </button>
+    </div>
+
+    <div class="grid-cols-2">
+        {% for notice in notices %}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span class="badge badge-blue">Official Notice</span>
+                <span style="font-size: 0.78rem; color: var(--text-muted);">{{ notice.created_at.strftime('%b %d, %Y') }}</span>
+            </div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">{{ notice.title }}</h4>
+            <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 14px;">{{ notice.content }}</p>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+                Target: {% if notice.department %}{{ notice.department.code }}{% else %}All Departments{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- TAB 4: STUDENT DOUBTS INBOX -->
+<div id="tab-fac-doubts" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-comments"></i> Student Doubts Inbox
+        </div>
+    </div>
+
+    <div class="grid-cols-1">
+        {% if doubts %}
+            {% for doubt in doubts %}
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div>
+                        <span class="badge {% if doubt.status == 'answered' %}badge-teal{% else %}badge-amber{% endif %}">
+                            {{ doubt.status.title() }}
+                        </span>
+                        <span style="font-size: 0.85rem; font-weight: 700; margin-left: 8px;">From Student: {{ doubt.student.user.full_name }}</span>
+                    </div>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">{{ doubt.created_at.strftime('%b %d, %H:%M') }}</span>
+                </div>
+                <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">{{ doubt.title }}</h4>
+                <p style="font-size: 0.92rem; color: var(--text-secondary); background: #f8fafc; padding: 12px; border-radius: var(--radius-md); margin-bottom: 14px;">
+                    {{ doubt.question }}
+                </p>
+
+                <!-- Replies -->
+                {% if doubt.replies %}
+                <div style="margin-bottom: 14px; border-top: 1px dashed var(--border-color); padding-top: 12px;">
+                    <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--accent-teal); margin-bottom: 8px;">Previous Answers:</h5>
+                    {% for rep in doubt.replies %}
+                    <div style="background: var(--accent-teal-light); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 0.88rem;">
+                        <strong>{{ rep.responder.full_name }}:</strong> {{ rep.reply_text }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Answer Form -->
+                <form action="{{ url_for('faculty.reply_doubt', doubt_id=doubt.id) }}" method="POST" enctype="multipart/form-data">
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <textarea name="reply_text" class="form-control" placeholder="Write your explanation or reply to student..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-paper-plane"></i> Post Answer
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card" style="text-align: center; color: var(--text-secondary); padding: 30px;">
+                No student doubts in your inbox.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 5: QUIZ BUILDER & SCORES -->
+<div id="tab-fac-quizzes" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-list-check"></i> Quiz Builder & Student Analytics
+        </div>
+        <button class="btn btn-primary btn-sm" data-modal-target="modal-create-quiz">
+            <i class="fa-solid fa-plus"></i> Create New Quiz
+        </button>
+    </div>
+
+    <div class="grid-cols-2">
+        {% if quizzes %}
+            {% for quiz in quizzes %}
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <span class="badge badge-teal">{{ quiz.subject }}</span>
+                    <form action="{{ url_for('faculty.toggle_quiz', quiz_id=quiz.id) }}" method="POST" style="display: inline;">
+                        <button type="submit" class="badge {% if quiz.is_active %}badge-teal{% else %}badge-rose{% endif %}" style="border: none; cursor: pointer;">
+                            {% if quiz.is_active %}Active{% else %}Inactive{% endif %}
+                        </button>
+                    </form>
+                </div>
+                <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">{{ quiz.title }}</h4>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
+                    Time Limit: {{ quiz.time_limit_minutes }} Mins &bull; Total Questions: {{ quiz.questions|length }}
+                </p>
+
+                <!-- Student Results Analytics Table -->
+                <h5 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 8px; color: var(--accent-teal);">
+                    Student Quiz Results ({{ quiz.attempts|length }} Attempted):
+                </h5>
+                {% if quiz.attempts %}
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                        <thead>
+                            <tr style="background: #f8fafc; text-align: left; border-bottom: 1px solid var(--border-color);">
+                                <th style="padding: 6px;">Student Name</th>
+                                <th style="padding: 6px;">Score</th>
+                                <th style="padding: 6px;">Completed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for att in quiz.attempts %}
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 6px; font-weight: 700;">{{ att.student.user.full_name }}</td>
+                                <td style="padding: 6px; color: var(--accent-teal); font-weight: 700;">{{ att.score }} / {{ att.total_possible }}</td>
+                                <td style="padding: 6px; color: var(--text-muted);">{{ att.completed_at.strftime('%b %d, %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="font-size: 0.82rem; color: var(--text-muted); font-style: italic;">No student attempts recorded yet.</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card" style="grid-column: span 2; text-align: center; color: var(--text-secondary); padding: 30px;">
+                No quizzes created yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 6: ENROLLED STUDENTS -->
+<div id="tab-fac-students" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-users"></i> {{ department.code }} Enrolled Students
+        </div>
+    </div>
+
+    <div class="grid-cols-3">
+        {% for stu in dept_students %}
+        <div class="card" style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 46px; height: 46px; background: var(--accent-teal-light); color: var(--accent-teal-hover); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem;">
+                {{ stu.user.full_name[0] }}
+            </div>
+            <div>
+                <h4 style="font-size: 0.98rem; font-weight: 700;">{{ stu.user.full_name }}</h4>
+                <p style="font-size: 0.78rem; color: var(--text-secondary);">{{ stu.academic_year }} &bull; {{ stu.roll_number or 'Student' }}</p>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ stu.user.email }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- MODAL: FACULTY UPLOAD NOTE -->
+<div id="modal-fac-upload-note" class="modal-backdrop">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;">Publish Faculty Study Material</h3>
+            <button data-modal-close class="alert-close">&times;</button>
+        </div>
+        <form action="{{ url_for('faculty.upload_note') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label class="form-label">Note Title</label>
+                <input type="text" name="title" class="form-control" placeholder="e.g. Convolutional Neural Networks Lecture Notes" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Subject</label>
+                <input type="text" name="subject" class="form-control" placeholder="e.g. Deep Learning" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target Department</label>
+                <select name="department_id" class="form-control">
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if dept.id == department.id %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label class="form-label">Target Academic Year</label>
+                    <select name="academic_year" class="form-control">
+                        <option value="all">All Years (FE, SE, TE, BE)</option>
+                        <option value="FE">First Year (FE)</option>
+                        <option value="SE">Second Year (SE)</option>
+                        <option value="TE">Third Year (TE)</option>
+                        <option value="BE">Final Year (BE)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Target Division</label>
+                    <select name="division_id" class="form-control">
+                        <option value="all">All Divisions</option>
+                        {% for div in divisions %}
+                            <option value="{{ div.id }}">{{ div.department.code }} - Division {{ div.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Upload File (PDF / PPT / DOCX)</label>
+                <input type="file" name="file" class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" placeholder="Summary of contents..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Publish Material</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: CREATE ASSIGNMENT -->
+<div id="modal-create-asgn" class="modal-backdrop">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;">Create New Assignment</h3>
+            <button data-modal-close class="alert-close">&times;</button>
+        </div>
+        <form action="{{ url_for('faculty.create_assignment') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label class="form-label">Assignment Title</label>
+                <input type="text" name="title" class="form-control" placeholder="e.g. Assignment 2: Neural Network Hyperparameter Tuning" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Subject</label>
+                <input type="text" name="subject" class="form-control" placeholder="e.g. Deep Learning" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target Department</label>
+                <select name="department_id" class="form-control">
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if dept.id == department.id %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label class="form-label">Target Academic Year</label>
+                    <select name="academic_year" class="form-control">
+                        <option value="all">All Years (FE, SE, TE, BE)</option>
+                        <option value="FE">First Year (FE)</option>
+                        <option value="SE">Second Year (SE)</option>
+                        <option value="TE">Third Year (TE)</option>
+                        <option value="BE">Final Year (BE)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Target Division</label>
+                    <select name="division_id" class="form-control">
+                        <option value="all">All Divisions</option>
+                        {% for div in divisions %}
+                            <option value="{{ div.id }}">{{ div.department.code }} - Division {{ div.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label class="form-label">Deadline (Date & Time)</label>
+                    <input type="datetime-local" name="deadline" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Maximum Marks</label>
+                    <input type="number" name="max_marks" class="form-control" value="50" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Instructions / Description</label>
+                <textarea name="description" class="form-control" placeholder="Detailed submission instructions..." required></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Attachment (Optional PDF / Question Paper)</label>
+                <input type="file" name="file" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Publish Assignment</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: EVALUATE SUBMISSION -->
+<div id="modal-eval-sub" class="modal-backdrop">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;">Evaluate Student Submission</h3>
+            <button data-modal-close class="alert-close">&times;</button>
+        </div>
+        <form id="eval-form" action="" method="POST">
+            <div class="form-group">
+                <label class="form-label">Student</label>
+                <input type="text" id="eval-student-name" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Marks Awarded (Out of <span id="eval-max-marks"></span>)</label>
+                <input type="number" name="marks" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Feedback / Remarks</label>
+                <textarea name="feedback" class="form-control" placeholder="Constructive feedback for the student..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Evaluation</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: CREATE NOTICE -->
+<div id="modal-create-notice" class="modal-backdrop">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;">Publish Official Academic Notice</h3>
+            <button data-modal-close class="alert-close">&times;</button>
+        </div>
+        <form action="{{ url_for('faculty.create_notice') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label class="form-label">Notice Title</label>
+                <input type="text" name="title" class="form-control" placeholder="e.g. Schedule for Mid-Sem Practical Exams" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target Department</label>
+                <select name="department_id" class="form-control">
+                    <option value="all">All Departments / College-wide</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if dept.id == department.id %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label class="form-label">Target Academic Year</label>
+                    <select name="academic_year" class="form-control">
+                        <option value="all">All Years (FE, SE, TE, BE)</option>
+                        <option value="FE">First Year (FE)</option>
+                        <option value="SE">Second Year (SE)</option>
+                        <option value="TE">Third Year (TE)</option>
+                        <option value="BE">Final Year (BE)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Target Division</label>
+                    <select name="division_id" class="form-control">
+                        <option value="all">All Divisions</option>
+                        {% for div in divisions %}
+                            <option value="{{ div.id }}">{{ div.department.code }} - Division {{ div.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Event / Exam Date (Optional)</label>
+                <input type="date" name="event_date" class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notice Content</label>
+                <textarea name="content" class="form-control" placeholder="Full notice details..." required></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Attachment (Optional PDF)</label>
+                <input type="file" name="file" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Publish Notice</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: CREATE QUIZ -->
+<div id="modal-create-quiz" class="modal-backdrop">
+    <div class="modal-content" style="max-width: 750px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;">Create Online Quiz</h3>
+            <button data-modal-close class="alert-close">&times;</button>
+        </div>
+        <form action="{{ url_for('faculty.create_quiz') }}" method="POST">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Quiz Title</label>
+                    <input type="text" name="title" class="form-control" placeholder="e.g. Deep Learning Quiz 1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Subject</label>
+                    <input type="text" name="subject" class="form-control" placeholder="e.g. Machine Learning" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target Department</label>
+                <select name="department_id" class="form-control">
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if dept.id == department.id %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label class="form-label">Target Academic Year</label>
+                    <select name="academic_year" class="form-control">
+                        <option value="all">All Years (FE, SE, TE, BE)</option>
+                        <option value="FE">First Year (FE)</option>
+                        <option value="SE">Second Year (SE)</option>
+                        <option value="TE">Third Year (TE)</option>
+                        <option value="BE">Final Year (BE)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Target Division</label>
+                    <select name="division_id" class="form-control">
+                        <option value="all">All Divisions</option>
+                        {% for div in divisions %}
+                            <option value="{{ div.id }}">{{ div.department.code }} - Division {{ div.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Time Limit (Minutes)</label>
+                <input type="number" name="time_limit_minutes" class="form-control" value="15" required>
+            </div>
+
+            <hr style="margin: 20px 0;">
+            <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: var(--accent-teal);">Quiz Questions:</h4>
+
+            <div id="quiz-questions-container">
+                <!-- Question 1 -->
+                <div class="question-block card" style="padding: 16px; margin-bottom: 16px; background: #f8fafc;">
+                    <div style="font-weight: 700; margin-bottom: 8px;">Question 1</div>
+                    <div class="form-group">
+                        <input type="text" name="q_text[]" class="form-control" placeholder="Type question text..." required>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <input type="text" name="q_opt_a[]" class="form-control" placeholder="Option A" required>
+                        <input type="text" name="q_opt_b[]" class="form-control" placeholder="Option B" required>
+                        <input type="text" name="q_opt_c[]" class="form-control" placeholder="Option C" required>
+                        <input type="text" name="q_opt_d[]" class="form-control" placeholder="Option D" required>
+                    </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label class="form-label">Correct Option</label>
+                        <select name="q_correct[]" class="form-control" style="width: 150px;">
+                            <option value="A">Option A</option>
+                            <option value="B">Option B</option>
+                            <option value="C">Option C</option>
+                            <option value="D">Option D</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addQuizQuestionField()" style="margin-bottom: 20px;">
+                <i class="fa-solid fa-plus"></i> Add Another Question
+            </button>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Create & Activate Quiz</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEvaluateModal(subId, studentName, maxMarks) {
+    document.getElementById('eval-form').action = "/faculty/assignment/evaluate/" + subId;
+    document.getElementById('eval-student-name').value = studentName;
+    document.getElementById('eval-max-marks').innerText = maxMarks;
+    document.getElementById('modal-eval-sub').classList.add('active');
+}
+
+let questionCount = 1;
+function addQuizQuestionField() {
+    questionCount++;
+    const container = document.getElementById('quiz-questions-container');
+    const qDiv = document.createElement('div');
+    qDiv.className = 'question-block card';
+    qDiv.style.cssText = 'padding: 16px; margin-bottom: 16px; background: #f8fafc;';
+    qDiv.innerHTML = `
+        <div style="font-weight: 700; margin-bottom: 8px;">Question ${questionCount}</div>
+        <div class="form-group">
+            <input type="text" name="q_text[]" class="form-control" placeholder="Type question text..." required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <input type="text" name="q_opt_a[]" class="form-control" placeholder="Option A" required>
+            <input type="text" name="q_opt_b[]" class="form-control" placeholder="Option B" required>
+            <input type="text" name="q_opt_c[]" class="form-control" placeholder="Option C" required>
+            <input type="text" name="q_opt_d[]" class="form-control" placeholder="Option D" required>
+        </div>
+        <div class="form-group" style="margin-top: 10px;">
+            <label class="form-label">Correct Option</label>
+            <select name="q_correct[]" class="form-control" style="width: 150px;">
+                <option value="A">Option A</option>
+                <option value="B">Option B</option>
+                <option value="C">Option C</option>
+                <option value="D">Option D</option>
+            </select>
+        </div>
+    `;
+    container.appendChild(qDiv);
+}
+</script>
+{% endblock %}

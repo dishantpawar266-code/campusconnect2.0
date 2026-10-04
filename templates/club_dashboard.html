@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Club Leader Dashboard - Campus Connect{% endblock %}
+
+{% block page_heading %}{{ club.name }}{% endblock %}
+{% block page_subheading %}Leader: {{ club.leader_name }} &bull; Category: {{ club.category }}{% endblock %}
+
+{% block header_badges %}
+<span class="badge badge-purple"><i class="fa-solid fa-flag"></i> {{ club.category }} Club</span>
+{% endblock %}
+
+{% block sidebar_nav %}
+<div class="nav-item active" data-tab="tab-club-notices">
+    <i class="fa-solid fa-bullhorn"></i> <span>Club Events & Notices</span>
+</div>
+<div class="nav-item" data-tab="tab-club-queries">
+    <i class="fa-solid fa-comments"></i> <span>Student Queries</span>
+</div>
+<div class="nav-item" data-tab="tab-club-profile">
+    <i class="fa-solid fa-id-card"></i> <span>Club Profile Settings</span>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- TAB 1: CLUB NOTICES & EVENTS -->
+<div id="tab-club-notices" class="tab-pane active">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-bullhorn"></i> Published Events & Announcements
+        </div>
+        <button class="btn btn-primary btn-sm" data-modal-target="modal-club-notice">
+            <i class="fa-solid fa-plus"></i> Publish Club Event / Notice
+        </button>
+    </div>
+
+    <div class="grid-cols-2">
+        {% if notices %}
+            {% for notice in notices %}
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <span class="badge badge-purple">{{ club.category }} Event</span>
+                    {% if notice.event_date %}
+                    <span class="badge badge-amber"><i class="fa-regular fa-calendar"></i> Event Date: {{ notice.event_date.strftime('%b %d, %Y') }}</span>
+                    {% endif %}
+                </div>
+                <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 8px;">{{ notice.title }}</h4>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 14px;">{{ notice.content }}</p>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">Published {{ notice.created_at.strftime('%b %d, %Y') }}</span>
+                    <a href="{{ url_for('common.notice_detail', notice_id=notice.id) }}" class="btn btn-secondary btn-sm">
+                        View Notice Page &rarr;
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card" style="grid-column: span 2; text-align: center; color: var(--text-secondary); padding: 30px;">
+                You haven't published any club notices or events yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 2: STUDENT QUERIES -->
+<div id="tab-club-queries" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-comments"></i> Student Queries & Doubts
+        </div>
+    </div>
+
+    <div class="grid-cols-1">
+        {% if doubts %}
+            {% for doubt in doubts %}
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div>
+                        <span class="badge {% if doubt.status == 'answered' %}badge-teal{% else %}badge-amber{% endif %}">
+                            {{ doubt.status.title() }}
+                        </span>
+                        <span style="font-size: 0.85rem; font-weight: 700; margin-left: 8px;">Student: {{ doubt.student.user.full_name }} ({{ doubt.student.department.code }})</span>
+                    </div>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">{{ doubt.created_at.strftime('%b %d, %H:%M') }}</span>
+                </div>
+                <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">{{ doubt.title }}</h4>
+                <p style="font-size: 0.92rem; color: var(--text-secondary); background: #f8fafc; padding: 12px; border-radius: var(--radius-md); margin-bottom: 14px;">
+                    {{ doubt.question }}
+                </p>
+
+                <!-- Replies -->
+                {% if doubt.replies %}
+                <div style="margin-bottom: 14px; border-top: 1px dashed var(--border-color); padding-top: 12px;">
+                    <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--accent-purple); margin-bottom: 8px;">Previous Responses:</h5>
+                    {% for rep in doubt.replies %}
+                    <div style="background: var(--accent-purple-light); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 0.88rem;">
+                        <strong>{{ rep.responder.full_name }}:</strong> {{ rep.reply_text }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Answer Form -->
+                <form action="{{ url_for('club.reply_doubt', doubt_id=doubt.id) }}" method="POST">
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <textarea name="reply_text" class="form-control" placeholder="Type answer or guidance for the student..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-paper-plane"></i> Post Answer
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card" style="text-align: center; color: var(--text-secondary); padding: 30px;">
+                No student queries in your inbox.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 3: CLUB PROFILE SETTINGS -->
+<div id="tab-club-profile" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-id-card"></i> Manage Club Info & Credentials
+        </div>
+    </div>
+
+    <div class="card" style="max-width: 650px;">
+        <form action="{{ url_for('club.update_profile') }}" method="POST">
+            <div class="form-group">
+                <label class="form-label">Club Name</label>
+                <input type="text" class="form-control" value="{{ club.name }}" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Leader Name</label>
+                <input type="text" name="leader_name" class="form-control" value="{{ club.leader_name }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Club Description</label>
+                <textarea name="description" class="form-control" rows="4">{{ club.description }}</textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Change Secret Passcode</label>
+                <input type="password" name="passcode" class="form-control" placeholder="Leave blank to keep current passcode">
+            </div>
+            <button type="submit" class="btn btn-primary">Save Profile Changes</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: PUBLISH CLUB NOTICE -->
+<div id="modal-club-notice" class="modal-backdrop">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;">Publish Club Event / Announcement</h3>
+            <button data-modal-close class="alert-close">&times;</button>
+        </div>
+        <form action="{{ url_for('club.create_notice') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label class="form-label">Event / Notice Title</label>
+                <input type="text" name="title" class="form-control" placeholder="e.g. Annual Autonomous Hackathon Registration Open" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Event Date (Optional)</label>
+                <input type="date" name="event_date" class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target Department</label>
+                <select name="department_id" class="form-control">
+                    <option value="all">All Departments / Open to All</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Full Event Description</label>
+                <textarea name="content" class="form-control" placeholder="Provide registration details, schedule, venue, cash prizes, etc..." required></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Attachment / Event Poster (Optional)</label>
+                <input type="file" name="file" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Publish Announcement</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,821 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - Campus Connect{% endblock %}
+
+{% block page_heading %}Student Command Center{% endblock %}
+{% block page_subheading %}Academic Hub for {{ student.user.full_name }} ({{ department.code }}{% if student.division %}
+- Division {{ student.division.name }}{% endif %}){% endblock %}
+
+{% block header_badges %}
+<span class="dept-badge"><i class="fa-solid fa-building-columns"></i> {{ department.code }}</span>
+<span class="badge badge-blue"><i class="fa-solid fa-user-graduate"></i> {{ student.academic_year }}</span>
+{% if student.division %}
+<span class="badge badge-purple"><i class="fa-solid fa-layer-group"></i> Div {{ student.division.name }}</span>
+{% endif %}
+{% endblock %}
+
+{% block sidebar_nav %}
+<div class="nav-item active" data-tab="tab-planner">
+    <i class="fa-solid fa-calendar-check"></i> <span>Task Planner</span>
+</div>
+<div class="nav-item" data-tab="tab-notes">
+    <i class="fa-solid fa-book-open"></i> <span>Notes & Materials</span>
+</div>
+<div class="nav-item" data-tab="tab-doubts">
+    <i class="fa-solid fa-circle-question"></i> <span>Faculty & Doubts</span>
+</div>
+<div class="nav-item" data-tab="tab-assignments">
+    <i class="fa-solid fa-file-pen"></i> <span>Assignments</span>
+</div>
+<div class="nav-item" data-tab="tab-notices">
+    <i class="fa-solid fa-bullhorn"></i> <span>Notices & Events</span>
+</div>
+<div class="nav-item" data-tab="tab-quizzes">
+    <i class="fa-solid fa-clock-rotate-left"></i> <span>Quizzes</span>
+</div>
+<div class="nav-item" data-tab="tab-clubs">
+    <i class="fa-solid fa-users"></i> <span>Campus Clubs</span>
+</div>
+<div class="nav-item" data-tab="tab-collaboration">
+    <i class="fa-solid fa-user-group"></i> <span>Classmates & Sharing</span>
+</div>
+<div class="nav-item" data-tab="tab-resources">
+    <i class="fa-solid fa-laptop-code"></i> <span>External Resources</span>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- TAB 1: TASK PLANNER -->
+<div id="tab-planner" class="tab-pane active">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-calendar-check"></i> Personal Task Planner
+        </div>
+        <button class="btn btn-primary btn-sm" data-modal-target="modal-new-task">
+            <i class="fa-solid fa-plus"></i> Add New Task
+        </button>
+    </div>
+
+    <div class="grid-cols-1">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Your Academic Tasks</span>
+                <span class="badge badge-teal">{{ tasks|length }} Tasks Total</span>
+            </div>
+
+            {% if tasks %}
+            {% for task in tasks %}
+            <div class="task-item {% if task.is_completed %}completed{% endif %}" id="task-item-{{ task.id }}">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <input type="checkbox" class="task-checkbox" data-task-id="{{ task.id }}" {% if task.is_completed
+                        %}checked{% endif %}>
+                    <div>
+                        <div class="task-title"
+                            style="font-weight: 700; font-size: 0.98rem; color: var(--text-primary);">
+                            {{ task.title }}
+                        </div>
+                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">
+                            {% if task.description %}{{ task.description }} &bull; {% endif %}
+                            <span class="badge badge-purple" style="font-size: 0.7rem;">{{ task.category }}</span>
+                            {% if task.due_date %}
+                            &bull; <i class="fa-regular fa-clock"></i> Due: {{ task.due_date.strftime('%b %d, %Y') }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <form action="{{ url_for('student.delete_task', task_id=task.id) }}" method="POST"
+                        style="display: inline;">
+                        <button type="submit" class="btn btn-secondary btn-sm"
+                            onclick="return confirm('Delete this task?');">
+                            <i class="fa-solid fa-trash" style="color: var(--accent-rose);"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                <i class="fa-solid fa-clipboard-check"
+                    style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 12px;"></i>
+                <p style="font-weight: 600;">No tasks yet</p>
+                <p style="font-size: 0.85rem;">Click 'Add New Task' above to start organizing your studies!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- TAB 2: NOTES & STUDY MATERIALS -->
+<div id="tab-notes" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-book-open"></i> Notes & Study Materials
+        </div>
+        <button class="btn btn-primary btn-sm" data-modal-target="modal-upload-note">
+            <i class="fa-solid fa-file-arrow-up"></i> Upload My Notes
+        </button>
+    </div>
+
+    <!-- Section A: Official Faculty Notes -->
+    <h3
+        style="font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-award" style="color: var(--accent-teal);"></i> Published Faculty Notes ({{ department.code
+        }})
+    </h3>
+    <div class="grid-cols-2" style="margin-bottom: 32px;">
+        {% if faculty_notes %}
+        {% for note in faculty_notes %}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span class="badge badge-teal"><i class="fa-solid fa-chalkboard-user"></i> Faculty Note</span>
+                <span class="badge badge-gray">{{ note.subject }}</span>
+            </div>
+            <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 6px;">{{ note.title }}</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 14px;">{{ note.description }}</p>
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                <span style="font-size: 0.78rem; color: var(--text-muted);">
+                    Uploaded by Prof. {{ note.uploader.full_name }}
+                </span>
+                {% if note.file_path %}
+                <a href="{{ url_for('student.download_file', filename=note.file_path) }}"
+                    class="btn btn-outline btn-sm">
+                    <i class="fa-solid fa-download"></i> Download
+                </a>
+                {% else %}
+                <span class="badge badge-gray">No File</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="grid-column: span 2; text-align: center; color: var(--text-secondary); padding: 30px;">
+            No faculty notes available yet for {{ department.code }}.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Section B: Own & Shared Notes -->
+    <h3
+        style="font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-folder-user" style="color: var(--accent-purple);"></i> My Uploads & Shared Notes
+    </h3>
+    <div class="grid-cols-2">
+        {% if own_notes or shared_notes %}
+        {% for note in own_notes %}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span class="badge badge-purple"><i class="fa-solid fa-user"></i> Uploaded by Me</span>
+                <span class="badge badge-gray">{{ note.subject }}</span>
+            </div>
+            <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 6px;">{{ note.title }}</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 14px;">{{ note.description }}</p>
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                {% if note.file_path %}
+                <a href="{{ url_for('student.download_file', filename=note.file_path) }}"
+                    class="btn btn-secondary btn-sm">
+                    <i class="fa-solid fa-download"></i> File
+                </a>
+                {% endif %}
+                <button class="btn btn-outline btn-sm" onclick="openShareModal('{{ note.id }}', '{{ note.title }}')">
+                    <i class="fa-solid fa-share-nodes"></i> Share with Friend
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% for note in shared_notes %}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span class="badge badge-blue"><i class="fa-solid fa-handshake"></i> Shared With Me</span>
+                <span class="badge badge-gray">{{ note.subject }}</span>
+            </div>
+            <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 6px;">{{ note.title }}</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 14px;">{{ note.description }}</p>
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                <span style="font-size: 0.78rem; color: var(--text-muted);">From {{ note.uploader.full_name }}</span>
+                {% if note.file_path %}
+                <a href="{{ url_for('student.download_file', filename=note.file_path) }}"
+                    class="btn btn-primary btn-sm">
+                    <i class="fa-solid fa-download"></i> Download
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="grid-column: span 2; text-align: center; color: var(--text-secondary); padding: 30px;">
+            No notes uploaded or shared with you yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 3: FACULTY CONNECTION & DOUBTS -->
+<div id="tab-doubts" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-circle-question"></i> Ask Doubts to Department Faculty
+        </div>
+        <button class="btn btn-primary btn-sm" data-modal-target="modal-ask-doubt">
+            <i class="fa-solid fa-paper-plane"></i> Ask Academic Doubt
+        </button>
+    </div>
+
+    <!-- Faculty Roster Cards -->
+    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;">Registered {{ department.code }} Faculty
+        Members</h3>
+    <div class="grid-cols-3" style="margin-bottom: 32px;">
+        {% if dept_faculty %}
+        {% for fac in dept_faculty %}
+        <div class="card" style="text-align: center;">
+            <div
+                style="width: 54px; height: 54px; background: var(--accent-teal-light); color: var(--accent-teal-hover); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 12px;">
+                <i class="fa-solid fa-user-tie"></i>
+            </div>
+            <h4 style="font-size: 1rem; font-weight: 700;">{{ fac.user.full_name }}</h4>
+            <div style="font-size: 0.82rem; color: var(--accent-teal); font-weight: 600;">{{ fac.designation }}</div>
+            <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px;">Spec: {{ fac.specialization or
+                'Academic Research' }}</p>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="grid-column: span 3; text-align: center; color: var(--text-secondary); padding: 30px;">
+            No faculty members registered in {{ department.code }} yet.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- My Doubts Feed -->
+    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;">My Submitted Doubts & Responses</h3>
+    <div class="grid-cols-1">
+        {% if doubts %}
+        {% for doubt in doubts %}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <div>
+                    <span class="badge {% if doubt.status == 'answered' %}badge-teal{% else %}badge-amber{% endif %}">
+                        <i class="fa-solid fa-circle-info"></i> {{ doubt.status.title() }}
+                    </span>
+                    <span style="font-size: 0.82rem; color: var(--text-muted); margin-left: 8px;">
+                        Target: {% if doubt.faculty %}Prof. {{ doubt.faculty.user.full_name }}{% elif doubt.club %}{{
+                        doubt.club.name }}{% endif %}
+                    </span>
+                </div>
+                <span style="font-size: 0.78rem; color: var(--text-muted);">{{ doubt.created_at.strftime('%b %d, %H:%M')
+                    }}</span>
+            </div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">{{ doubt.title }}</h4>
+            <p
+                style="font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 16px; background: #f8fafc; padding: 12px; border-radius: var(--radius-md);">
+                {{ doubt.question }}
+            </p>
+
+            <!-- Replies Thread -->
+            {% if doubt.replies %}
+            <div style="margin-top: 16px; border-top: 1px dashed var(--border-color); padding-top: 16px;">
+                <h5 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 12px; color: var(--accent-teal);">
+                    <i class="fa-solid fa-comments"></i> Answers & Thread Replies:
+                </h5>
+                {% for reply in doubt.replies %}
+                <div
+                    style="background: var(--accent-teal-light); border-left: 4px solid var(--accent-teal); padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 10px;">
+                    <div
+                        style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; color: var(--accent-teal-hover); margin-bottom: 4px;">
+                        <span>{{ reply.responder.full_name }}</span>
+                        <span>{{ reply.created_at.strftime('%b %d, %H:%M') }}</span>
+                    </div>
+                    <p style="font-size: 0.88rem; color: var(--text-primary);">{{ reply.reply_text }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Followup reply form -->
+            <form action="{{ url_for('student.reply_doubt', doubt_id=doubt.id) }}" method="POST"
+                style="margin-top: 12px; display: flex; gap: 10px;">
+                <input type="text" name="reply_text" class="form-control" placeholder="Write a follow-up reply..."
+                    required>
+                <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-reply"></i> Reply</button>
+            </form>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="text-align: center; color: var(--text-secondary); padding: 30px;">
+            No doubts yet
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 4: ASSIGNMENTS -->
+<div id="tab-assignments" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-file-pen"></i> Department Assignments
+        </div>
+    </div>
+
+    <div class="grid-cols-2">
+        {% if assignments %}
+        {% for asgn in assignments %}
+        {% set sub = student_submissions.get(asgn.id) %}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span class="badge badge-purple">{{ asgn.subject }}</span>
+                {% if sub %}
+                <span class="badge badge-teal"><i class="fa-solid fa-circle-check"></i> Submitted</span>
+                {% else %}
+                <span class="badge badge-amber"><i class="fa-regular fa-clock"></i> Deadline: {{
+                    asgn.deadline.strftime('%b %d, %H:%M') }}</span>
+                {% endif %}
+            </div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">{{ asgn.title }}</h4>
+            <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 14px;">{{ asgn.description }}</p>
+
+            {% if asgn.file_path %}
+            <div style="margin-bottom: 14px;">
+                <a href="{{ url_for('student.download_file', filename=asgn.file_path) }}"
+                    class="btn btn-outline btn-sm">
+                    <i class="fa-solid fa-paperclip"></i> Download Assignment File
+                </a>
+            </div>
+            {% endif %}
+
+            {% if sub %}
+            <div
+                style="background: #f8fafc; padding: 12px; border-radius: var(--radius-md); font-size: 0.85rem; border-left: 3px solid var(--accent-teal);">
+                <strong>Your Submission:</strong> Submitted on {{ sub.submitted_at.strftime('%b %d, %H:%M') }}<br>
+                {% if sub.marks_obtained is not none %}
+                <span style="color: var(--accent-teal); font-weight: 700;">Score: {{ sub.marks_obtained }} / {{
+                    asgn.max_marks }}</span>
+                {% if sub.feedback %}<br><em>Feedback: {{ sub.feedback }}</em>{% endif %}
+                {% else %}
+                <span style="color: var(--accent-amber); font-weight: 600;">Status: Awaiting Faculty Evaluation</span>
+                {% endif %}
+            </div>
+            {% else %}
+            <button class="btn btn-primary btn-sm" onclick="openSubmitAsgnModal('{{ asgn.id }}', '{{ asgn.title }}')">
+                <i class="fa-solid fa-upload"></i> Submit Solution
+            </button>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="grid-column: span 2; text-align: center; color: var(--text-secondary); padding: 30px;">
+            No assignments available
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 5: NOTICES & EVENTS -->
+<div id="tab-notices" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-bullhorn"></i> Official Notices & Campus Events
+        </div>
+    </div>
+
+    <!-- Academic Notices -->
+    <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 16px;">Academic Notices</h3>
+    <div class="grid-cols-2" style="margin-bottom: 32px;">
+        {% if academic_notices %}
+        {% for notice in academic_notices %}
+        <div class="card" style="border-left: 4px solid var(--accent-blue);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span class="badge badge-blue"><i class="fa-solid fa-graduation-cap"></i> Academic Notice</span>
+                <span style="font-size: 0.78rem; color: var(--text-muted);">{{ notice.created_at.strftime('%b %d, %Y')
+                    }}</span>
+            </div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">{{ notice.title }}</h4>
+            <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 14px;">{{ notice.content }}</p>
+
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                <span style="font-size: 0.78rem; color: var(--text-muted);">By {{ notice.author.full_name }}</span>
+                <a href="{{ url_for('common.notice_detail', notice_id=notice.id) }}" class="btn btn-secondary btn-sm">
+                    View Details &rarr;
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="grid-column: span 2; text-align: center; color: var(--text-secondary); padding: 30px;">
+            No notices posted yet
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Club Notices & Events -->
+    <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 16px;">Campus Club Announcements</h3>
+    <div class="grid-cols-2">
+        {% if club_notices %}
+        {% for notice in club_notices %}
+        <div class="card" style="border-left: 4px solid var(--accent-purple);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span class="badge badge-purple"><i class="fa-solid fa-flag"></i> Club Event</span>
+                {% if notice.event_date %}
+                <span class="badge badge-amber"><i class="fa-regular fa-calendar"></i> Event: {{
+                    notice.event_date.strftime('%b %d') }}</span>
+                {% endif %}
+            </div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">{{ notice.title }}</h4>
+            <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 14px;">{{ notice.content }}</p>
+
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                <span style="font-size: 0.78rem; color: var(--accent-purple); font-weight: 700;">
+                    {% if notice.club %}{{ notice.club.name }}{% else %}{{ notice.author.full_name }}{% endif %}
+                </span>
+                <a href="{{ url_for('common.notice_detail', notice_id=notice.id) }}" class="btn btn-secondary btn-sm">
+                    View Details &rarr;
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="grid-column: span 2; text-align: center; color: var(--text-secondary); padding: 30px;">
+            No club announcements posted yet
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 6: QUIZZES -->
+<div id="tab-quizzes" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-clock-rotate-left"></i> Live Online Quizzes
+        </div>
+    </div>
+
+    <div class="grid-cols-2">
+        {% if active_quizzes %}
+        {% for quiz in active_quizzes %}
+        {% set att = quiz_attempts.get(quiz.id) %}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span class="badge badge-teal">{{ quiz.subject }}</span>
+                <span class="badge badge-gray"><i class="fa-regular fa-clock"></i> {{ quiz.time_limit_minutes }}
+                    Mins</span>
+            </div>
+            <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">{{ quiz.title }}</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
+                Total Questions: {{ quiz.questions|length }} &bull; Total Marks: {{ quiz.total_marks }}
+            </p>
+
+            {% if att %}
+            <div
+                style="background: var(--accent-teal-light); padding: 12px; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-teal-hover);">COMPLETED</div>
+                    <div style="font-size: 1.1rem; font-weight: 800; color: var(--accent-teal-hover);">
+                        Score: {{ att.score }} / {{ att.total_possible }}
+                    </div>
+                </div>
+                <a href="{{ url_for('student.quiz_results', attempt_id=att.id) }}" class="btn btn-outline btn-sm">
+                    Review Results
+                </a>
+            </div>
+            {% else %}
+            <a href="{{ url_for('student.attempt_quiz', quiz_id=quiz.id) }}" class="btn btn-primary btn-sm"
+                style="width: 100%;">
+                <i class="fa-solid fa-play"></i> Attempt Quiz Now
+            </a>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="grid-column: span 2; text-align: center; color: var(--text-secondary); padding: 30px;">
+            No active quizzes available for {{ department.code }} at this moment.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 7: CAMPUS CLUBS -->
+<div id="tab-clubs" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-users"></i> Campus Clubs & Societies
+        </div>
+    </div>
+
+    <div class="grid-cols-3">
+        {% if clubs %}
+        {% for club in clubs %}
+        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <span class="badge badge-purple">{{ club.category }}</span>
+                    {% if club.department %}
+                    <span class="badge badge-teal">{{ club.department.code }}</span>
+                    {% endif %}
+                </div>
+                <h4 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 6px;">{{ club.name }}</h4>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">{{ club.description }}
+                </p>
+            </div>
+            <div style="border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px;">
+                    Club Leader: {{ club.leader_name }}
+                </div>
+                <button class="btn btn-outline btn-sm" style="width: 100%;"
+                    onclick="openAskClubModal('{{ club.id }}', '{{ club.name }}')">
+                    <i class="fa-solid fa-comment-dots"></i> Ask Club Leader
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="grid-column: span 3; text-align: center; color: var(--text-secondary); padding: 30px;">
+            No campus clubs registered yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 8: CLASSMATES & SHARING -->
+<div id="tab-collaboration" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-user-group"></i> Classmates Directory ({{ department.code }})
+        </div>
+    </div>
+
+    <div class="grid-cols-3">
+        {% if classmates %}
+        {% for mate in classmates %}
+        <div class="card" style="display: flex; align-items: center; gap: 14px;">
+            <div
+                style="width: 48px; height: 48px; background: var(--accent-purple-light); color: var(--accent-purple); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem;">
+                {{ mate.user.full_name[0] }}
+            </div>
+            <div>
+                <h4 style="font-size: 0.98rem; font-weight: 700;">{{ mate.user.full_name }}</h4>
+                <p style="font-size: 0.78rem; color: var(--text-secondary);">{{ mate.academic_year }} &bull; {{
+                    mate.roll_number or 'Student' }}</p>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="grid-column: span 3; text-align: center; color: var(--text-secondary); padding: 30px;">
+            No other registered students in {{ department.code }} yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- TAB 9: EXTERNAL RESOURCES -->
+<div id="tab-resources" class="tab-pane">
+    <div class="section-header">
+        <div class="section-title">
+            <i class="fa-solid fa-laptop-code"></i> External Learning & Opportunities Portal
+        </div>
+    </div>
+
+    <div class="grid-cols-3">
+        {% for res in external_resources %}
+        <div class="resource-card">
+            <div>
+                <div class="resource-icon">
+                    <i class="fa-solid fa-{{ res.icon_name }}"></i>
+                </div>
+                <span class="badge badge-teal" style="margin-bottom: 8px;">{{ res.badge_tag }}</span>
+                <h4 style="font-size: 1.1rem; font-weight: 800; margin-bottom: 6px;">{{ res.title }}</h4>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">{{ res.description }}
+                </p>
+            </div>
+            <a href="{{ res.url }}" target="_blank" class="btn btn-primary btn-sm" style="width: 100%;">
+                Visit Platform <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- MODAL 1: NEW TASK -->
+<div id="modal-new-task" class="modal-backdrop">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;">Add New Personal Task</h3>
+            <button data-modal-close class="alert-close">&times;</button>
+        </div>
+        <form action="{{ url_for('student.create_task') }}" method="POST">
+            <div class="form-group">
+                <label class="form-label">Task Title</label>
+                <input type="text" name="title" class="form-control" placeholder="e.g. Finish ML Assignment 2" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-control">
+                    <option value="Assignment">Assignment</option>
+                    <option value="Exam">Exam / Quiz</option>
+                    <option value="Project">Project Work</option>
+                    <option value="Coding">Coding Challenge</option>
+                    <option value="General" selected>General Study</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Due Date</label>
+                <input type="date" name="due_date" class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description (Optional)</label>
+                <textarea name="description" class="form-control"
+                    placeholder="Details about task requirements..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Save Task</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 2: UPLOAD NOTE -->
+<div id="modal-upload-note" class="modal-backdrop">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;">Upload Student Notes</h3>
+            <button data-modal-close class="alert-close">&times;</button>
+        </div>
+        <form action="{{ url_for('student.upload_note') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label class="form-label">Note Title</label>
+                <input type="text" name="title" class="form-control" placeholder="e.g. Backpropagation Derivation"
+                    required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Subject</label>
+                <input type="text" name="subject" class="form-control" placeholder="e.g. Deep Learning" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">File (PDF, DOCX, PPT, Image)</label>
+                <input type="file" name="file" class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" placeholder="Key topics covered..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Upload Note</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 3: ASK DOUBT -->
+<div id="modal-ask-doubt" class="modal-backdrop">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;">Ask Academic Doubt</h3>
+            <button data-modal-close class="alert-close">&times;</button>
+        </div>
+        <form action="{{ url_for('student.submit_doubt') }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="target_type" value="faculty">
+            <div class="form-group">
+                <label class="form-label">Select Faculty</label>
+                {% if dept_faculty %}
+                <select name="faculty_id" class="form-control" required>
+                    {% for fac in dept_faculty %}
+                    <option value="{{ fac.id }}">{{ fac.user.full_name }} ({{ fac.designation }})</option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                <p style="font-size: 0.85rem; color: var(--accent-amber);">No faculty members registered in {{
+                    department.code }} yet.</p>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Doubt Title</label>
+                <input type="text" name="title" class="form-control"
+                    placeholder="e.g. Vanishing gradient problem in RNNs" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Subject</label>
+                <input type="text" name="subject" class="form-control" placeholder="e.g. Deep Learning">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Question Details</label>
+                <textarea name="question" class="form-control" placeholder="Explain your doubt in detail..."
+                    required></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Attachment / Screenshot (Optional)</label>
+                <input type="file" name="file" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;" {% if not dept_faculty %}disabled{% endif
+                %}>Submit Doubt</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 4: SHARE NOTE -->
+<div id="modal-share-note" class="modal-backdrop">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;">Share Note with Classmate</h3>
+            <button data-modal-close class="alert-close">&times;</button>
+        </div>
+        <form action="{{ url_for('student.share_note') }}" method="POST">
+            <input type="hidden" name="note_id" id="share-note-id">
+            <div class="form-group">
+                <label class="form-label">Note Selected</label>
+                <input type="text" id="share-note-title" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Select Classmate</label>
+                {% if classmates %}
+                <select name="recipient_student_id" class="form-control" required>
+                    {% for mate in classmates %}
+                    <option value="{{ mate.id }}">{{ mate.user.full_name }} ({{ mate.academic_year }})</option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                <p style="font-size: 0.85rem; color: var(--accent-amber);">No other registered classmates in {{
+                    department.code }} yet.</p>
+                {% endif %}
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;" {% if not classmates %}disabled{% endif
+                %}>Share Note</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 5: SUBMIT ASSIGNMENT -->
+<div id="modal-submit-asgn" class="modal-backdrop">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;">Submit Assignment Solution</h3>
+            <button data-modal-close class="alert-close">&times;</button>
+        </div>
+        <form id="asgn-submit-form" action="" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label class="form-label">Assignment</label>
+                <input type="text" id="asgn-title-display" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Written Answer / Explanation</label>
+                <textarea name="submission_text" class="form-control"
+                    placeholder="Type your answer, code snippets, or notes..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Upload Submission File (PDF / ZIP / DOCX)</label>
+                <input type="file" name="file" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Solution</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 6: ASK CLUB -->
+<div id="modal-ask-club" class="modal-backdrop">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;">Ask Question to Club Leader</h3>
+            <button data-modal-close class="alert-close">&times;</button>
+        </div>
+        <form action="{{ url_for('student.submit_doubt') }}" method="POST">
+            <input type="hidden" name="target_type" value="club">
+            <input type="hidden" name="club_id" id="ask-club-id">
+            <div class="form-group">
+                <label class="form-label">Club</label>
+                <input type="text" id="ask-club-name" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Subject / Event</label>
+                <input type="text" name="title" class="form-control" placeholder="e.g. AI Hackathon Registration Query"
+                    required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Your Question</label>
+                <textarea name="question" class="form-control" placeholder="Type your query regarding club events..."
+                    required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Send Query</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openShareModal(noteId, title) {
+        document.getElementById('share-note-id').value = noteId;
+        document.getElementById('share-note-title').value = title;
+        document.getElementById('modal-share-note').classList.add('active');
+    }
+
+    function openSubmitAsgnModal(asgnId, title) {
+        document.getElementById('asgn-submit-form').action = "/student/assignment/submit/" + asgnId;
+        document.getElementById('asgn-title-display').value = title;
+        document.getElementById('modal-submit-asgn').classList.add('active');
+    }
+
+    function openAskClubModal(clubId, clubName) {
+        document.getElementById('ask-club-id').value = clubId;
+        document.getElementById('ask-club-name').value = clubName;
+        document.getElementById('modal-ask-club').classList.add('active');
+    }
+</script>
+{% endblock %}

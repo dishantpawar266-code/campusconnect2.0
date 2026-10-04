@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}External Resources & Learning Opportunities - Campus Connect{% endblock %}
+
+{% block page_heading %}External Platforms & Career Hub{% endblock %}
+{% block page_subheading %}Curated Competitive Programming, Hackathons, Study Platforms, and Career Tools{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <div class="section-title">
+        <i class="fa-solid fa-compass"></i> Learning & Opportunity Platforms
+    </div>
+</div>
+
+<!-- Category Filters -->
+<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px;">
+    <a href="{{ url_for('common.resources') }}" class="btn {% if not selected_category %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+        All Platforms
+    </a>
+    <a href="{{ url_for('common.resources', category='Competitive Programming') }}" class="btn {% if selected_category == 'Competitive Programming' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+        Competitive Programming
+    </a>
+    <a href="{{ url_for('common.resources', category='Hackathons & Opportunities') }}" class="btn {% if selected_category == 'Hackathons & Opportunities' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+        Hackathons & Contests
+    </a>
+    <a href="{{ url_for('common.resources', category='Data Structures & Algorithms') }}" class="btn {% if selected_category == 'Data Structures & Algorithms' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+        Data Structures & Algorithms
+    </a>
+    <a href="{{ url_for('common.resources', category='Developer Tools') }}" class="btn {% if selected_category == 'Developer Tools' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+        Developer Tools & Credits
+    </a>
+</div>
+
+<!-- Resources Grid -->
+<div class="grid-cols-3">
+    {% for res in resources %}
+    <div class="resource-card">
+        <div>
+            <div class="resource-icon">
+                <i class="fa-solid fa-{{ res.icon_name }}"></i>
+            </div>
+            <span class="badge badge-teal" style="margin-bottom: 8px;">{{ res.badge_tag }}</span>
+            <h4 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 6px;">{{ res.title }}</h4>
+            <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;">
+                {{ res.description }}
+            </p>
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">
+                Category: {{ res.category }}
+            </div>
+            <a href="{{ res.url }}" target="_blank" class="btn btn-primary btn-sm" style="width: 100%;">
+                Open {{ res.title }} <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
