@@ -36,11 +36,17 @@ def create_app():
     def page_not_found(e):
         return render_template('404.html'), 404
 
-    @app.errorhandler(403)
-    def forbidden(e):
-        return render_template('403.html'), 403
+    # Auto-create tables and seed initial data if running on online DB or first run
+    with app.app_context():
+        try:
+            db.create_all()
+            from seed import seed_database
+            seed_database()
+        except Exception as e:
+            app.logger.warning(f"Database auto-init status: {e}")
 
     return app
+
 
 app = create_app()
 
