@@ -227,6 +227,7 @@ def students():
     search_q = request.args.get('q', '').strip()
     dept_filter = request.args.get('department_id', 'all').strip()
     year_filter = request.args.get('academic_year', 'all').strip()
+    sort_by = request.args.get('sort', 'newest').strip()
     page = request.args.get('page', 1, type=int)
 
     query = Student.query.join(User)
@@ -244,8 +245,20 @@ def students():
     if year_filter and year_filter != 'all':
         query = query.filter(Student.academic_year.ilike(f'%{year_filter}%'))
 
-    pagination = query.order_by(User.created_at.desc()).paginate(page=page, per_page=15, error_out=False)
+    if sort_by == 'oldest':
+        query = query.order_by(User.created_at.asc())
+    elif sort_by == 'name_asc':
+        query = query.order_by(User.full_name.asc())
+    elif sort_by == 'name_desc':
+        query = query.order_by(User.full_name.desc())
+    elif sort_by == 'roll_asc':
+        query = query.order_by(Student.roll_number.asc())
+    else:
+        query = query.order_by(User.created_at.desc())
+
+    pagination = query.paginate(page=page, per_page=15, error_out=False)
     students_list = pagination.items
+    total_students_count = Student.query.count()
     departments = Department.query.all()
 
     return render_template(
@@ -255,6 +268,8 @@ def students():
         search_q=search_q,
         dept_filter=dept_filter,
         year_filter=year_filter,
+        sort_by=sort_by,
+        total_students_count=total_students_count,
         departments=departments
     )
 
@@ -264,6 +279,7 @@ def students():
 def faculty():
     search_q = request.args.get('q', '').strip()
     dept_filter = request.args.get('department_id', 'all').strip()
+    sort_by = request.args.get('sort', 'newest').strip()
     page = request.args.get('page', 1, type=int)
 
     query = Faculty.query.join(User)
@@ -279,8 +295,18 @@ def faculty():
     if dept_filter and dept_filter != 'all':
         query = query.filter(Faculty.department_id == int(dept_filter))
 
-    pagination = query.order_by(User.created_at.desc()).paginate(page=page, per_page=15, error_out=False)
+    if sort_by == 'oldest':
+        query = query.order_by(User.created_at.asc())
+    elif sort_by == 'name_asc':
+        query = query.order_by(User.full_name.asc())
+    elif sort_by == 'name_desc':
+        query = query.order_by(User.full_name.desc())
+    else:
+        query = query.order_by(User.created_at.desc())
+
+    pagination = query.paginate(page=page, per_page=15, error_out=False)
     faculty_list = pagination.items
+    total_faculty_count = Faculty.query.count()
     departments = Department.query.all()
 
     return render_template(
@@ -289,6 +315,8 @@ def faculty():
         pagination=pagination,
         search_q=search_q,
         dept_filter=dept_filter,
+        sort_by=sort_by,
+        total_faculty_count=total_faculty_count,
         departments=departments
     )
 
@@ -298,6 +326,7 @@ def faculty():
 def clubs():
     search_q = request.args.get('q', '').strip()
     category_filter = request.args.get('category', 'all').strip()
+    sort_by = request.args.get('sort', 'newest').strip()
     page = request.args.get('page', 1, type=int)
 
     query = Club.query.join(User)
@@ -312,23 +341,38 @@ def clubs():
     if category_filter and category_filter != 'all':
         query = query.filter(Club.category == category_filter)
 
-    pagination = query.order_by(User.created_at.desc()).paginate(page=page, per_page=15, error_out=False)
+    if sort_by == 'oldest':
+        query = query.order_by(User.created_at.asc())
+    elif sort_by == 'name_asc':
+        query = query.order_by(Club.name.asc())
+    elif sort_by == 'name_desc':
+        query = query.order_by(Club.name.desc())
+    else:
+        query = query.order_by(User.created_at.desc())
+
+    pagination = query.paginate(page=page, per_page=15, error_out=False)
     clubs_list = pagination.items
+    total_clubs_count = Club.query.count()
 
     return render_template(
         'admin/clubs.html',
         clubs=clubs_list,
         pagination=pagination,
         search_q=search_q,
-        category_filter=category_filter
+        category_filter=category_filter,
+        sort_by=sort_by,
+        total_clubs_count=total_clubs_count
     )
 
 
 @admin_bp.route('/departments')
+@admin_bp.route('/department-statistics')
 @admin_required
 def departments():
     depts = Department.query.order_by(Department.id.asc()).all()
     dept_details = []
+
+    total_all_students = Student.query.count()
 
     for d in depts:
         st_count = Student.query.filter_by(department_id=d.id).count()
@@ -338,6 +382,8 @@ def departments():
         asgn_count = Assignment.query.filter_by(department_id=d.id).count()
         notice_count = Notice.query.filter_by(department_id=d.id).count()
 
+        percentage = round((st_count / total_all_students * 100), 1) if total_all_students > 0 else 0.0
+
         dept_details.append({
             'department': d,
             'students_count': st_count,
@@ -346,10 +392,11 @@ def departments():
             'notes_count': notes_count,
             'assignments_count': asgn_count,
             'notices_count': notice_count,
+            'student_percentage': percentage,
             'total_users': st_count + fac_count + club_count
         })
 
-    return render_template('admin/departments.html', dept_details=dept_details)
+    return render_template('admin/departments.html', dept_details=dept_details, total_all_students=total_all_students)
 
 
 @admin_bp.route('/notes')

@@ -1,44 +1,111 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Departments View - Developer Admin Panel{% endblock %}
-{% block page_heading %}Official Campus Departments (8 Total){% endblock %}
-{% block page_subheading %}Overview of official departments and user metrics per department{% endblock %}
+{% block title %}Department Statistics - Developer Admin Console{% endblock %}
+{% block page_heading %}Department Statistics & Student Distribution{% endblock %}
+{% block page_subheading %}Automatically calculated department-wise registered student counts directly from production database{% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; gap: 24px;">
+<!-- Total Overview Bar -->
+<div style="display: flex; justify-content: space-between; align-items: center; background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);">
+    <div>
+        <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Total Student Enrollment Across Departments</div>
+        <div style="font-size: 1.8rem; font-weight: 800; color: #0f172a; line-height: 1.2; margin-top: 2px;">
+            {{ total_all_students }} Registered Students
+        </div>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <span class="status-badge status-active" style="padding: 8px 16px; font-size: 0.82rem;">
+            <i class="fa-solid fa-calculator"></i> Real-time DB Aggregate
+        </span>
+    </div>
+</div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-        {% for d in dept_details %}
-        <div class="card" style="padding: 22px; border-top: 4px solid #0284c7;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                <div>
-                    <span style="font-size: 0.72rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em;">DEPARTMENT #{{ d.department.id }}</span>
-                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-top: 2px;">{{ d.department.name }}</h3>
-                </div>
-                <span class="role-pill role-student" style="font-size: 0.85rem;">{{ d.department.code }}</span>
+<!-- Detailed Table of Department Statistics -->
+<div class="admin-card">
+    <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 18px 0;">
+        <i class="fa-solid fa-chart-column" style="color: #0284c7; margin-right: 8px;"></i> Department Student Breakdown
+    </h3>
+
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Department Code</th>
+                    <th>Department Name</th>
+                    <th>Registered Students</th>
+                    <th>Student Share (%)</th>
+                    <th>Faculty Count</th>
+                    <th>Club Count</th>
+                    <th>Notes / Content</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in dept_details %}
+                <tr>
+                    <td>
+                        <span class="role-pill role-student" style="font-weight: 800; font-size: 0.85rem;">{{ d.department.code }}</span>
+                    </td>
+                    <td>
+                        <div style="font-weight: 800; color: #0f172a;">{{ d.department.name }}</div>
+                        <div style="font-size: 0.75rem; color: #64748b;">{{ d.department.description }}</div>
+                    </td>
+                    <td>
+                        <div style="font-size: 1.1rem; font-weight: 800; color: #0284c7;">{{ d.students_count }}</div>
+                    </td>
+                    <td style="min-width: 180px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 4px;">
+                            <span>{{ d.student_percentage }}%</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                            <div style="width: {{ d.student_percentage }}%; height: 100%; background: linear-gradient(90deg, #0284c7, #0d9488); border-radius: 4px;"></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 700; color: #d97706;">{{ d.faculty_count }}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 700; color: #7e22ce;">{{ d.clubs_count }}</div>
+                    </td>
+                    <td>
+                        <div style="font-size: 0.82rem; color: #475569;">
+                            {{ d.notes_count }} Notes &bull; {{ d.assignments_count }} Assignments
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Department Cards Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+    {% for d in dept_details %}
+    <div class="admin-card" style="margin-bottom: 0; border-top: 4px solid #0284c7;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <div>
+                <span style="font-size: 0.72rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em;">DEPARTMENT #{{ d.department.id }}</span>
+                <h4 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-top: 2px;">{{ d.department.name }}</h4>
             </div>
+            <span class="role-pill role-student" style="font-size: 0.82rem;">{{ d.department.code }}</span>
+        </div>
 
-            <p style="font-size: 0.84rem; color: #64748b; margin-bottom: 18px; line-height: 1.5;">
-                {{ d.department.description }}
-            </p>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; background: #f8fafc; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color);">
-                <div>
-                    <div style="font-size: 1.1rem; font-weight: 800; color: #0284c7;">{{ d.students_count }}</div>
-                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Students</div>
-                </div>
-                <div>
-                    <div style="font-size: 1.1rem; font-weight: 800; color: #d97706;">{{ d.faculty_count }}</div>
-                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Faculty</div>
-                </div>
-                <div>
-                    <div style="font-size: 1.1rem; font-weight: 800; color: #0d9488;">{{ d.notes_count }}</div>
-                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Notes</div>
-                </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: #f8fafc; padding: 14px; border-radius: 10px; text-align: center; border: 1px solid #e2e8f0; margin-top: 14px;">
+            <div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #0284c7;">{{ d.students_count }}</div>
+                <div style="font-size: 0.72rem; color: #64748b; font-weight: 700;">Students</div>
+            </div>
+            <div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #d97706;">{{ d.faculty_count }}</div>
+                <div style="font-size: 0.72rem; color: #64748b; font-weight: 700;">Faculty</div>
+            </div>
+            <div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #0d9488;">{{ d.clubs_count }}</div>
+                <div style="font-size: 0.72rem; color: #64748b; font-weight: 700;">Clubs</div>
             </div>
         </div>
-        {% endfor %}
     </div>
-
+    {% endfor %}
 </div>
 {% endblock %}
+

@@ -350,6 +350,10 @@
                     <i class="fa-solid fa-users-gear"></i>
                     <span>All Users</span>
                 </a>
+                <a href="{{ url_for('admin.departments') }}" class="admin-nav-item {% if request.endpoint in ['admin.departments', 'admin.department_statistics'] %}active{% endif %}">
+                    <i class="fa-solid fa-chart-column"></i>
+                    <span>Department Statistics</span>
+                </a>
                 <a href="{{ url_for('admin.notes') }}" class="admin-nav-item {% if request.endpoint == 'admin.notes' %}active{% endif %}">
                     <i class="fa-solid fa-book-bookmark"></i>
                     <span>Notes</span>

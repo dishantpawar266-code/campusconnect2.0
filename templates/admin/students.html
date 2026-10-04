@@ -5,16 +5,32 @@
 {% block page_subheading %}Dedicated view of all student accounts in the production database{% endblock %}
 
 {% block content %}
+<!-- Top Header Summary Card -->
+<div style="display: flex; justify-content: space-between; align-items: center; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 48px; height: 48px; background: #e0f2fe; color: #0284c7; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+            <i class="fa-solid fa-user-graduate"></i>
+        </div>
+        <div>
+            <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Registered Students</div>
+            <div style="font-size: 1.5rem; font-weight: 800; color: #0f172a;">{{ total_students_count }} Real Enrolled Students</div>
+        </div>
+    </div>
+    <span class="status-badge status-active" style="padding: 6px 14px; font-size: 0.8rem;">
+        <i class="fa-solid fa-database"></i> Live DB Table: `students`
+    </span>
+</div>
+
 <div class="admin-card">
     <!-- Filter Controls -->
     <form method="GET" action="{{ url_for('admin.students') }}" style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 20px;">
         <div style="flex: 1; min-width: 240px; position: relative;">
             <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
-            <input type="text" name="q" value="{{ search_q }}" placeholder="Search student name, email, or roll no..."
+            <input type="text" name="q" value="{{ search_q }}" placeholder="Search by name, roll no, or email..."
                    style="width: 100%; padding: 10px 14px 10px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; outline: none;">
         </div>
 
-        <div style="min-width: 180px;">
+        <div style="min-width: 170px;">
             <select name="department_id" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; outline: none; background: white;">
                 <option value="all" {% if dept_filter == 'all' %}selected{% endif %}>All Departments</option>
                 {% for d in departments %}
@@ -23,7 +39,7 @@
             </select>
         </div>
 
-        <div style="min-width: 150px;">
+        <div style="min-width: 140px;">
             <select name="academic_year" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; outline: none; background: white;">
                 <option value="all" {% if year_filter == 'all' %}selected{% endif %}>All Years</option>
                 <option value="First Year" {% if 'First' in year_filter %}selected{% endif %}>First Year (FE)</option>
@@ -33,10 +49,20 @@
             </select>
         </div>
 
+        <div style="min-width: 140px;">
+            <select name="sort" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; outline: none; background: white;">
+                <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest First</option>
+                <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest First</option>
+                <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+                <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+                <option value="roll_asc" {% if sort_by == 'roll_asc' %}selected{% endif %}>Roll No (Asc)</option>
+            </select>
+        </div>
+
         <button type="submit" class="btn btn-primary" style="padding: 10px 18px; border-radius: 8px; font-weight: 700;">
-            <i class="fa-solid fa-filter"></i> Search Students
+            <i class="fa-solid fa-filter"></i> Search & Filter
         </button>
-        {% if search_q or dept_filter != 'all' or year_filter != 'all' %}
+        {% if search_q or dept_filter != 'all' or year_filter != 'all' or sort_by != 'newest' %}
         <a href="{{ url_for('admin.students') }}" class="btn btn-outline" style="padding: 10px 14px; border-radius: 8px; font-weight: 600;">Reset</a>
         {% endif %}
     </form>
@@ -46,12 +72,11 @@
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>Student Name</th>
-                    <th>Email Address</th>
+                    <th>Name</th>
+                    <th>Roll No</th>
                     <th>Department</th>
-                    <th>Academic Year</th>
-                    <th>Roll Number</th>
-                    <th>Joined Date</th>
+                    <th>Email</th>
+                    <th>Registration Date</th>
                     <th>Status</th>
                     <th style="text-align: right;">Actions</th>
                 </tr>
@@ -61,24 +86,23 @@
                 <tr>
                     <td>
                         <div style="font-weight: 800; color: #0f172a; font-size: 0.92rem;">{{ st.user.full_name }}</div>
-                        <span class="role-pill role-student" style="font-size: 0.68rem; margin-top: 2px;">Student</span>
+                        <span style="font-size: 0.74rem; color: #64748b;">Year: {{ st.academic_year }}</span>
+                    </td>
+                    <td>
+                        <div style="font-weight: 700; color: #1e293b; font-family: monospace; font-size: 0.88rem;">
+                            {{ st.roll_number or 'N/A' }}
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-weight: 800; color: #0284c7;">{{ st.department.code }}</span>
+                        <div style="font-size: 0.74rem; color: #64748b;">{{ st.department.name }}</div>
                     </td>
                     <td>
                         <div style="font-size: 0.85rem; color: #334155; font-family: monospace;">{{ st.user.email }}</div>
                     </td>
                     <td>
-                        <span style="font-weight: 700; color: #0284c7;">{{ st.department.code }}</span>
-                        <div style="font-size: 0.74rem; color: #64748b;">{{ st.department.name }}</div>
-                    </td>
-                    <td>
-                        <div style="font-weight: 600; color: #334155; font-size: 0.84rem;">{{ st.academic_year }}</div>
-                    </td>
-                    <td>
-                        <div style="font-weight: 700; color: #475569; font-size: 0.85rem;">{{ st.roll_number or 'N/A' }}</div>
-                    </td>
-                    <td>
-                        <div style="font-size: 0.8rem; color: #64748b;">
-                            {{ st.user.created_at.strftime('%b %d, %Y') if st.user.created_at else 'Earlier' }}
+                        <div style="font-size: 0.82rem; color: #64748b;">
+                            {{ st.user.created_at.strftime('%Y-%m-%d %H:%M') if st.user.created_at else 'Earlier' }}
                         </div>
                     </td>
                     <td>
@@ -90,6 +114,12 @@
                     </td>
                     <td style="text-align: right;">
                         <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                            <button type="button" class="btn btn-outline btn-sm"
+                                    onclick="openStudentDetails('{{ st.user.full_name | escape }}', '{{ st.roll_number or 'N/A' }}', '{{ st.department.code }} - {{ st.department.name | escape }}', '{{ st.user.email | escape }}', '{{ st.academic_year }}', '{{ st.user.created_at.strftime('%Y-%m-%d %H:%M') if st.user.created_at else 'N/A' }}', '{{ st.user.is_active }}')"
+                                    title="View Student Details">
+                                <i class="fa-solid fa-eye"></i> Details
+                            </button>
+
                             <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=st.user.id) }}" style="display: inline;">
                                 {% if st.user.is_active is not defined or st.user.is_active %}
                                 <button type="submit" class="btn btn-sm" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;" title="Deactivate Student">
@@ -110,7 +140,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="8" style="text-align: center; color: #64748b; padding: 32px;">No registered student records found.</td>
+                    <td colspan="7" style="text-align: center; color: #64748b; padding: 32px;">No registered student records found.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -120,17 +150,64 @@
     <!-- Pagination -->
     {% if pagination and pagination.pages > 1 %}
     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; font-size: 0.85rem; color: #64748b;">
-        <div>Showing Page {{ pagination.page }} of {{ pagination.pages }} ({{ pagination.total }} Total Students)</div>
+        <div>Showing Page {{ pagination.page }} of {{ pagination.pages }} ({{ pagination.total }} Filtered / {{ total_students_count }} Total Students)</div>
         <div style="display: flex; gap: 6px;">
             {% if pagination.has_prev %}
-            <a href="{{ url_for('admin.students', page=pagination.prev_num, q=search_q, department_id=dept_filter, academic_year=year_filter) }}" class="btn btn-outline btn-sm">&larr; Prev</a>
+            <a href="{{ url_for('admin.students', page=pagination.prev_num, q=search_q, department_id=dept_filter, academic_year=year_filter, sort=sort_by) }}" class="btn btn-outline btn-sm">&larr; Prev</a>
             {% endif %}
             {% if pagination.has_next %}
-            <a href="{{ url_for('admin.students', page=pagination.next_num, q=search_q, department_id=dept_filter, academic_year=year_filter) }}" class="btn btn-outline btn-sm">Next &rarr;</a>
+            <a href="{{ url_for('admin.students', page=pagination.next_num, q=search_q, department_id=dept_filter, academic_year=year_filter, sort=sort_by) }}" class="btn btn-outline btn-sm">Next &rarr;</a>
             {% endif %}
         </div>
     </div>
     {% endif %}
+</div>
+
+<!-- View Student Details Modal -->
+<div id="studentDetailsModal" class="admin-modal">
+    <div class="admin-modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 18px;">
+            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-user-graduate" style="color: #0284c7;"></i> Student Profile Details</h3>
+            <button type="button" onclick="closeModal('studentDetailsModal')" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">&times;</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px; font-size: 0.9rem;">
+            <div>
+                <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Full Name</span>
+                <div id="stModalName" style="font-weight: 800; color: #0f172a; font-size: 1.1rem;"></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div>
+                    <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Roll Number</span>
+                    <div id="stModalRoll" style="font-weight: 700; color: #0284c7; font-family: monospace;"></div>
+                </div>
+                <div>
+                    <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Academic Year</span>
+                    <div id="stModalYear" style="font-weight: 700; color: #334155;"></div>
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Department</span>
+                <div id="stModalDept" style="font-weight: 600; color: #1e293b;"></div>
+            </div>
+            <div>
+                <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Email Address</span>
+                <div id="stModalEmail" style="font-weight: 600; color: #475569; font-family: monospace;"></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div>
+                    <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Registration Date</span>
+                    <div id="stModalRegDate" style="font-weight: 600; color: #475569;"></div>
+                </div>
+                <div>
+                    <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Account Status</span>
+                    <div id="stModalStatus"></div>
+                </div>
+            </div>
+        </div>
+        <div style="text-align: right; margin-top: 24px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('studentDetailsModal')">Close</button>
+        </div>
+    </div>
 </div>
 
 <!-- Delete Confirmation Modal -->
@@ -164,6 +241,19 @@
 
 {% block extra_js %}
 <script>
+    function openStudentDetails(name, roll, dept, email, year, regDate, isActive) {
+        document.getElementById('stModalName').innerText = name;
+        document.getElementById('stModalRoll').innerText = roll;
+        document.getElementById('stModalDept').innerText = dept;
+        document.getElementById('stModalEmail').innerText = email;
+        document.getElementById('stModalYear').innerText = year;
+        document.getElementById('stModalRegDate').innerText = regDate;
+        document.getElementById('stModalStatus').innerHTML = (isActive === 'True' || isActive === true) ?
+            '<span class="status-badge status-active"><i class="fa-solid fa-check"></i> Active</span>' :
+            '<span class="status-badge status-inactive"><i class="fa-solid fa-ban"></i> Inactive</span>';
+        document.getElementById('studentDetailsModal').classList.add('show');
+    }
+
     function openDeleteModal(id, name, email) {
         document.getElementById('deleteUserName').innerText = name;
         document.getElementById('deleteUserEmail').innerText = email;
@@ -175,3 +265,4 @@
     }
 </script>
 {% endblock %}
+

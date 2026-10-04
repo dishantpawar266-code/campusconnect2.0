@@ -90,6 +90,8 @@ class CampusConnectRealDataTestCase(unittest.TestCase):
             '/admin/faculty',
             '/admin/clubs',
             '/admin/users',
+            '/admin/department-statistics',
+            '/admin/departments',
             '/admin/notes',
             '/admin/notices',
             '/admin/assignments',
