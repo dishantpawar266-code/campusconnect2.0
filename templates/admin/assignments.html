@@ -1,0 +1,91 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Assignments View - Developer Admin Panel{% endblock %}
+{% block page_heading %}Assignments Data View{% endblock %}
+{% block page_subheading %}Real assignment tasks created by faculty members and student submissions count{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- SEARCH & FILTERS -->
+    <div class="card" style="padding: 20px;">
+        <form action="{{ url_for('admin.assignments') }}" method="GET" style="display: grid; grid-template-columns: 2fr 1.5fr auto; gap: 14px; align-items: end;">
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Search Assignment Title / Subject</label>
+                <input type="text" name="q" value="{{ search_q }}" class="form-control" placeholder="Search assignment...">
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Filter Department</label>
+                <select name="department_id" class="form-control">
+                    <option value="all" {% if dept_filter == 'all' %}selected{% endif %}>All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if dept_filter == str(dept.id) %}selected{% endif %}>{{ dept.name }} ({{ dept.code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-primary" style="height: 42px;">
+                    <i class="fa-solid fa-search"></i> Search Assignments
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Subject</th>
+                        <th>Faculty</th>
+                        <th>Department</th>
+                        <th>Deadline</th>
+                        <th>Max Marks</th>
+                        <th>Submissions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if assignments %}
+                        {% for a in assignments %}
+                        <tr>
+                            <td><strong>#ASGN-{{ a.id }}</strong></td>
+                            <td><strong style="color: #0f172a;">{{ a.title }}</strong></td>
+                            <td>{{ a.subject }}</td>
+                            <td>{{ a.faculty.user.full_name }}</td>
+                            <td><span style="font-weight: 700; color: #d97706;">{{ a.department.code }}</span></td>
+                            <td><span style="font-size: 0.8rem; color: #dc2626; font-weight: 700;">{{ a.deadline.strftime('%Y-%m-%d %H:%M') if a.deadline else 'N/A' }}</span></td>
+                            <td>{{ a.max_marks }}</td>
+                            <td><span style="font-weight: 800; color: #0284c7;">{{ a.submissions | length }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: #94a3b8; padding: 25px;">No assignment records found.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pagination.pages > 1 %}
+        <div style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.84rem; color: #64748b;">Page {{ pagination.page }} of {{ pagination.pages }}</div>
+            <div style="display: flex; gap: 8px;">
+                {% if pagination.has_prev %}
+                    <a href="{{ url_for('admin.assignments', page=pagination.prev_num, q=search_q, department_id=dept_filter) }}" class="btn btn-outline btn-sm">&larr; Previous</a>
+                {% endif %}
+                {% if pagination.has_next %}
+                    <a href="{{ url_for('admin.assignments', page=pagination.next_num, q=search_q, department_id=dept_filter) }}" class="btn btn-outline btn-sm">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

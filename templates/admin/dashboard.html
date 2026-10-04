@@ -1,0 +1,161 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin Dashboard - CampusConnect Developer Console{% endblock %}
+{% block page_heading %}Admin Telemetry & Live Dashboard{% endblock %}
+{% block page_subheading %}Real-time user stats and system data queried directly from production database{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 28px;">
+
+    <!-- TOP REAL-TIME METRICS CARDS -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+        <!-- Total Users -->
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon" style="background: #e0f2fe; color: #0284c7;">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div>
+                <div style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Total Registered Users</div>
+                <div style="font-size: 1.8rem; font-weight: 900; color: #0f172a; line-height: 1.1;">{{ total_users }}</div>
+                <div style="font-size: 0.72rem; color: #0284c7; margin-top: 4px; font-weight: 700;">Live Real Data</div>
+            </div>
+        </div>
+
+        <!-- Total Students -->
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon" style="background: #ccfbf1; color: #0d9488;">
+                <i class="fa-solid fa-user-graduate"></i>
+            </div>
+            <div>
+                <div style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Total Students</div>
+                <div style="font-size: 1.8rem; font-weight: 900; color: #0f172a; line-height: 1.1;">{{ total_students }}</div>
+                <div style="font-size: 0.72rem; color: #0d9488; margin-top: 4px; font-weight: 700;">Student Accounts</div>
+            </div>
+        </div>
+
+        <!-- Total Faculty -->
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon" style="background: #fef3c7; color: #d97706;">
+                <i class="fa-solid fa-chalkboard-user"></i>
+            </div>
+            <div>
+                <div style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Total Faculty</div>
+                <div style="font-size: 1.8rem; font-weight: 900; color: #0f172a; line-height: 1.1;">{{ total_faculty }}</div>
+                <div style="font-size: 0.72rem; color: #d97706; margin-top: 4px; font-weight: 700;">Faculty Members</div>
+            </div>
+        </div>
+
+        <!-- Total Clubs -->
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon" style="background: #f3e8ff; color: #9333ea;">
+                <i class="fa-solid fa-people-group"></i>
+            </div>
+            <div>
+                <div style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Total Clubs</div>
+                <div style="font-size: 1.8rem; font-weight: 900; color: #0f172a; line-height: 1.1;">{{ total_clubs }}</div>
+                <div style="font-size: 0.72rem; color: #9333ea; margin-top: 4px; font-weight: 700;">Registered Societies</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECOND ROW METRICS -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+        <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+            <div style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">{{ total_notes }}</div>
+            <div style="font-size: 0.75rem; color: #64748b; font-weight: 700;">Uploaded Notes</div>
+        </div>
+        <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+            <div style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">{{ total_assignments }}</div>
+            <div style="font-size: 0.75rem; color: #64748b; font-weight: 700;">Assignments</div>
+        </div>
+        <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+            <div style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">{{ total_notices }}</div>
+            <div style="font-size: 0.75rem; color: #64748b; font-weight: 700;">Notices Published</div>
+        </div>
+        <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+            <div style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">{{ total_doubts }}</div>
+            <div style="font-size: 0.75rem; color: #64748b; font-weight: 700;">Doubts Asked</div>
+        </div>
+        <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+            <div style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">{{ total_tasks }}</div>
+            <div style="font-size: 0.75rem; color: #64748b; font-weight: 700;">Student Tasks</div>
+        </div>
+    </div>
+
+    <!-- MAIN TWO COLUMN GRID -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+
+        <!-- USERS BY DEPARTMENT -->
+        <div class="card" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <div>
+                    <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a;">Users by Department</h3>
+                    <p style="font-size: 0.78rem; color: #64748b;">Distribution across the official 8 departments</p>
+                </div>
+                <a href="{{ url_for('admin.departments') }}" class="btn btn-outline btn-sm">View Details</a>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                {% for stat in dept_stats %}
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 6px;">
+                        <span>{{ stat.dept.name }} ({{ stat.dept.code }})</span>
+                        <span style="color: #0284c7;">{{ stat.total_dept_users }} Users ({{ stat.students_count }} St. / {{ stat.faculty_count }} Fac.)</span>
+                    </div>
+                    <div style="height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden;">
+                        {% set pct = (stat.total_dept_users / total_users * 100) if total_users > 0 else 0 %}
+                        <div style="height: 100%; width: {{ pct }}%; background: linear-gradient(90deg, #0284c7, #0d9488); border-radius: 4px;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- RECENT REGISTRATIONS -->
+        <div class="card" style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <div>
+                    <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a;">Recent Registrations</h3>
+                    <p style="font-size: 0.78rem; color: #64748b;">Latest registered accounts in production</p>
+                </div>
+                <a href="{{ url_for('admin.users') }}" class="btn btn-outline btn-sm">View All Users</a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th>Role</th>
+                            <th>Email</th>
+                            <th>Registered</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if recent_users %}
+                            {% for u in recent_users %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 700; color: #0f172a;">{{ u.full_name }}</div>
+                                </td>
+                                <td>
+                                    <span class="role-pill role-{{ u.role }}">{{ u.role }}</span>
+                                </td>
+                                <td><span style="font-size: 0.8rem; color: #64748b;">{{ u.email }}</span></td>
+                                <td><span style="font-size: 0.75rem; color: #94a3b8;">{{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else 'N/A' }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">No recent user registrations found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

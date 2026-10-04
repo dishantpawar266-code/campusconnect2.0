@@ -2,6 +2,7 @@ import unittest
 from app import app
 from database import db
 from models import Department, User, Student, Faculty, Club, Task, Note, Notice, Doubt, DoubtReply, Assignment
+from seed import seed_database
 
 class CampusConnectRealDataTestCase(unittest.TestCase):
     def setUp(self):
@@ -13,15 +14,54 @@ class CampusConnectRealDataTestCase(unittest.TestCase):
             # Reset database for clean testing
             db.drop_all()
             db.create_all()
+            seed_database()
 
-            # Seed essential departments
-            dept_aiml = Department(name="Artificial Intelligence & Machine Learning", code="AIML", description="AI Department")
-            dept_cse = Department(name="Computer Science Engineering", code="CSE", description="CSE Department")
-            db.session.add_all([dept_aiml, dept_cse])
-            db.session.commit()
+            dept_aiml = Department.query.filter_by(code='AIML').first()
+            dept_cse = Department.query.filter_by(code='CSE').first()
+            self.dept_aiml_id = dept_aiml.id if dept_aiml else 1
+            self.dept_cse_id = dept_cse.id if dept_cse else 2
 
-            self.dept_aiml_id = dept_aiml.id
-            self.dept_cse_id = dept_cse.id
+    def test_official_8_departments(self):
+        with app.app_context():
+            depts = Department.query.all()
+            dept_codes = [d.code for d in depts]
+            expected_codes = ['AIML', 'CSE', 'CSE-DS', 'AI&DS', 'ENTC', 'IT', 'ME', 'EE']
+            for code in expected_codes:
+                self.assertIn(code, dept_codes)
+
+    def test_admin_authentication_and_security(self):
+        client = self.client
+
+        # 1. Unauthenticated request to /admin/dashboard must be redirected to /admin/login
+        res = client.get('/admin/dashboard', follow_redirects=True)
+        self.assertIn(b'Admin Authentication', res.data)
+
+        # 2. Login as regular student and attempt to access /admin/dashboard (Must be blocked)
+        client.post('/register/student', data={
+            'full_name': 'Normal Student',
+            'email': 'student@rcpit.ac.in',
+            'password': 'password123',
+            'department_id': self.dept_aiml_id,
+            'academic_year': 'Third Year (TE)',
+            'roll_number': '101'
+        }, follow_redirects=True)
+
+        client.post('/login', data={'role': 'student', 'email': 'student@rcpit.ac.in', 'password': 'password123'}, follow_redirects=True)
+        
+        # Accessing /admin/dashboard as student
+        res = client.get('/admin/dashboard', follow_redirects=True)
+        self.assertIn(b'Admin access required', res.data)
+        self.assertIn(b'Admin Authentication', res.data)
+
+        client.get('/logout')
+
+        # 3. Authenticate as Developer Admin
+        res = client.post('/admin/login', data={
+            'email': 'admin@rcpit.ac.in',
+            'password': 'Admin@Campus2026!'
+        }, follow_redirects=True)
+        self.assertIn(b'Admin Telemetry', res.data)
+        self.assertIn(b'Normal Student', res.data)  # Shows real student registered in DB!
 
     def test_full_real_user_lifecycle_and_isolation(self):
         client = self.client
@@ -189,3 +229,4 @@ class CampusConnectRealDataTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

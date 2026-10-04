@@ -1,0 +1,91 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Clubs View - Developer Admin Panel{% endblock %}
+{% block page_heading %}Campus Clubs Directory{% endblock %}
+{% block page_subheading %}Inspection of registered student societies, leaders, and activity status{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- SEARCH & FILTERS -->
+    <div class="card" style="padding: 20px;">
+        <form action="{{ url_for('admin.clubs') }}" method="GET" style="display: grid; grid-template-columns: 2fr 1.5fr auto; gap: 14px; align-items: end;">
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Search Club Name / Leader / Email</label>
+                <input type="text" name="q" value="{{ search_q }}" class="form-control" placeholder="Search campus club...">
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Filter Category</label>
+                <select name="category" class="form-control">
+                    <option value="all" {% if category_filter == 'all' %}selected{% endif %}>All Categories</option>
+                    <option value="Technical" {% if category_filter == 'Technical' %}selected{% endif %}>Technical</option>
+                    <option value="Cultural" {% if category_filter == 'Cultural' %}selected{% endif %}>Cultural</option>
+                    <option value="Sports" {% if category_filter == 'Sports' %}selected{% endif %}>Sports</option>
+                    <option value="Literature" {% if category_filter == 'Literature' %}selected{% endif %}>Literature</option>
+                    <option value="Social" {% if category_filter == 'Social' %}selected{% endif %}>Social</option>
+                </select>
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-primary" style="height: 42px;">
+                    <i class="fa-solid fa-search"></i> Search Clubs
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Club ID</th>
+                        <th>Club Name</th>
+                        <th>Leader Name</th>
+                        <th>Club Email</th>
+                        <th>Category</th>
+                        <th>Department</th>
+                        <th>Notices</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if clubs %}
+                        {% for c in clubs %}
+                        <tr>
+                            <td><strong>#CLUB-{{ c.id }}</strong></td>
+                            <td><strong style="color: #0f172a;">{{ c.name }}</strong></td>
+                            <td>{{ c.leader_name }}</td>
+                            <td><span style="font-family: monospace; font-size: 0.82rem;">{{ c.user.email }}</span></td>
+                            <td><span class="role-pill role-club">{{ c.category }}</span></td>
+                            <td>{{ c.department.code if c.department else 'College-wide' }}</td>
+                            <td><span style="font-weight: 700;">{{ c.notices | length }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #94a3b8; padding: 25px;">No club records found.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pagination.pages > 1 %}
+        <div style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.84rem; color: #64748b;">Page {{ pagination.page }} of {{ pagination.pages }}</div>
+            <div style="display: flex; gap: 8px;">
+                {% if pagination.has_prev %}
+                    <a href="{{ url_for('admin.clubs', page=pagination.prev_num, q=search_q, category=category_filter) }}" class="btn btn-outline btn-sm">&larr; Previous</a>
+                {% endif %}
+                {% if pagination.has_next %}
+                    <a href="{{ url_for('admin.clubs', page=pagination.next_num, q=search_q, category=category_filter) }}" class="btn btn-outline btn-sm">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

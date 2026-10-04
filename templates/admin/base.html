@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Developer Admin Console - CampusConnect{% endblock %}</title>
+    <!-- FontAwesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Style CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --admin-dark: #0f172a;
+            --admin-navy: #1e293b;
+            --admin-teal: #0d9488;
+            --admin-accent: #0284c7;
+            --admin-gold: #f59e0b;
+        }
+
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: 100vh;
+            background: #f8fafc;
+        }
+
+        .admin-sidebar {
+            background: var(--admin-dark);
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #334155;
+        }
+
+        .admin-sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .admin-brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #0284c7, #0d9488);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+        }
+
+        .admin-sidebar-nav {
+            padding: 16px 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow-y: auto;
+        }
+
+        .admin-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .admin-nav-item:hover, .admin-nav-item.active {
+            background: #1e293b;
+            color: #38bdf8;
+        }
+
+        .admin-nav-item.active {
+            border-left: 4px solid #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .admin-nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.05rem;
+        }
+
+        .admin-user-card {
+            padding: 16px 20px;
+            border-top: 1px solid #334155;
+            background: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .admin-top-header {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+        }
+
+        .admin-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .admin-stat-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .admin-stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: white;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.88rem;
+        }
+
+        .admin-table th {
+            background: #f1f5f9;
+            color: #334155;
+            font-weight: 700;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        .admin-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            vertical-align: middle;
+        }
+
+        .admin-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .admin-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .role-pill {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .role-student { background: #e0f2fe; color: #0369a1; }
+        .role-faculty { background: #fef3c7; color: #92400e; }
+        .role-club { background: #f3e8ff; color: #6b21a8; }
+        .role-admin { background: #dcfce7; color: #166534; }
+
+        @media (max-width: 900px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+            }
+            .admin-sidebar {
+                display: none;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    {% if session.get('admin_logged_in') %}
+    <div class="admin-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-header">
+                <div class="admin-brand-icon">
+                    <i class="fa-solid fa-code"></i>
+                </div>
+                <div>
+                    <div style="font-size: 1rem; font-weight: 800; color: white; letter-spacing: 0.02em;">CAMPUS CONNECT</div>
+                    <div style="font-size: 0.72rem; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Developer Console</div>
+                </div>
+            </div>
+
+            <nav class="admin-sidebar-nav">
+                <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('admin.users') }}" class="admin-nav-item {% if request.endpoint == 'admin.users' %}active{% endif %}">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>All Users</span>
+                </a>
+                <a href="{{ url_for('admin.students') }}" class="admin-nav-item {% if request.endpoint == 'admin.students' %}active{% endif %}">
+                    <i class="fa-solid fa-user-graduate"></i>
+                    <span>Students</span>
+                </a>
+                <a href="{{ url_for('admin.faculty') }}" class="admin-nav-item {% if request.endpoint == 'admin.faculty' %}active{% endif %}">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    <span>Faculty</span>
+                </a>
+                <a href="{{ url_for('admin.clubs') }}" class="admin-nav-item {% if request.endpoint == 'admin.clubs' %}active{% endif %}">
+                    <i class="fa-solid fa-people-group"></i>
+                    <span>Clubs</span>
+                </a>
+                <a href="{{ url_for('admin.departments') }}" class="admin-nav-item {% if request.endpoint == 'admin.departments' %}active{% endif %}">
+                    <i class="fa-solid fa-sitemap"></i>
+                    <span>Departments</span>
+                </a>
+                <a href="{{ url_for('admin.notes') }}" class="admin-nav-item {% if request.endpoint == 'admin.notes' %}active{% endif %}">
+                    <i class="fa-solid fa-book-bookmark"></i>
+                    <span>Notes</span>
+                </a>
+                <a href="{{ url_for('admin.assignments') }}" class="admin-nav-item {% if request.endpoint == 'admin.assignments' %}active{% endif %}">
+                    <i class="fa-solid fa-file-pen"></i>
+                    <span>Assignments</span>
+                </a>
+                <a href="{{ url_for('admin.notices') }}" class="admin-nav-item {% if request.endpoint == 'admin.notices' %}active{% endif %}">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>Notices</span>
+                </a>
+                <a href="{{ url_for('admin.doubts') }}" class="admin-nav-item {% if request.endpoint == 'admin.doubts' %}active{% endif %}">
+                    <i class="fa-solid fa-circle-question"></i>
+                    <span>Doubts</span>
+                </a>
+                <a href="{{ url_for('admin.system') }}" class="admin-nav-item {% if request.endpoint == 'admin.system' %}active{% endif %}">
+                    <i class="fa-solid fa-server"></i>
+                    <span>System Overview</span>
+                </a>
+            </nav>
+
+            <div class="admin-user-card">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 34px; height: 34px; background: #0284c7; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
+                        {{ session.get('user_name', 'A')[0] | upper }}
+                    </div>
+                    <div style="line-height: 1.2;">
+                        <div style="font-size: 0.84rem; font-weight: 700; color: white;">{{ session.get('user_name', 'Admin') }}</div>
+                        <div style="font-size: 0.72rem; color: #94a3b8;">Developer Admin</div>
+                    </div>
+                </div>
+                <a href="{{ url_for('admin.logout') }}" style="color: #ef4444; font-size: 1.1rem; text-decoration: none;" title="Logout Admin">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Area -->
+        <div style="display: flex; flex-direction: column; width: 100%; min-width: 0;">
+            <header class="admin-top-header">
+                <div>
+                    <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0;">{% block page_heading %}Developer Admin Panel{% endblock %}</h2>
+                    <p style="font-size: 0.82rem; color: #64748b; margin-top: 2px;">{% block page_subheading %}Production Database Inspection & System Management{% endblock %}</p>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <span class="admin-badge">
+                        <i class="fa-solid fa-database"></i> Live Database Connected
+                    </span>
+                    <a href="{{ url_for('admin.logout') }}" class="btn btn-outline btn-sm" style="color: #ef4444; border-color: #fca5a5;">
+                        <i class="fa-solid fa-lock"></i> Exit Console
+                    </a>
+                </div>
+            </header>
+
+            <main style="padding: 28px 32px; flex: 1;">
+                <div class="alert-container">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">
+                                    <span><i class="fa-solid fa-circle-info"></i> {{ message }}</span>
+                                    <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    {% else %}
+    <main style="min-height: 100vh; background: #0f172a; display: flex; align-items: center; justify-content: center; padding: 20px;">
+        <div style="width: 100%; max-width: 1000px;">
+            <div class="alert-container" style="margin-bottom: 20px;">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                <span><i class="fa-solid fa-circle-info"></i> {{ message }}</span>
+                                <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+            {% block public_content %}{% endblock %}
+        </div>
+    </main>
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

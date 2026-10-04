@@ -1,13 +1,14 @@
+import os
 from database import db
-from models import Department, ExternalResource
+from models import Department, ExternalResource, User
 
 def seed_database():
-    print("Syncing official 5 departments and external resources directory...")
+    print("Syncing official 8 departments, admin user, and external resources...")
 
-    # Official Department Structure (ONLY these 5 departments, NO divisions)
+    # Official Department Structure (ONLY these 8 departments, NO divisions)
     depts_structure = [
         (
-            "Artificial Intelligence & Machine Learning",
+            "Artificial Intelligence and Machine Learning",
             "AIML",
             "Advanced study of AI models, Machine Learning, Deep Learning, and NLP."
         ),
@@ -17,30 +18,55 @@ def seed_database():
             "Core software engineering, algorithms, system architecture, and computing foundations."
         ),
         (
-            "Computer Science Engineering - Data Science",
+            "Computer Science Engineering (Data Science)",
             "CSE-DS",
             "Core software engineering, data analytics, and big data systems."
         ),
         (
-            "Artificial Intelligence & Data Science",
+            "Artificial Intelligence and Data Science",
             "AI&DS",
             "Statistical modeling, data science, and neural network pipelines."
         ),
         (
-            "Electronics & Telecommunication Engineering",
+            "Electronics and Telecommunication Engineering",
             "ENTC",
             "Embedded systems, IoT, signal processing, and communication networks."
+        ),
+        (
+            "Information Technology",
+            "IT",
+            "Information technology, software engineering, web technologies, and systems."
+        ),
+        (
+            "Mechanical Engineering",
+            "ME",
+            "Thermal engineering, mechanical design, CAD/CAM, and robotics."
+        ),
+        (
+            "Electrical Engineering",
+            "EE",
+            "Electrical power systems, control systems, energy engineering, and electronics."
         )
     ]
 
     valid_codes = [code for _, code, _ in depts_structure]
 
-    # Delete any deprecated departments
+    # Delete any deprecated departments that are NOT referenced by existing data
+    from models import Student, Faculty, Club, Note, Assignment, Notice, Quiz
     deprecated = Department.query.filter(Department.code.notin_(valid_codes)).all()
     for d in deprecated:
-        db.session.delete(d)
+        has_students = Student.query.filter_by(department_id=d.id).first()
+        has_faculty = Faculty.query.filter_by(department_id=d.id).first()
+        has_clubs = Club.query.filter_by(department_id=d.id).first()
+        has_notes = Note.query.filter_by(department_id=d.id).first()
+        has_assignments = Assignment.query.filter_by(department_id=d.id).first()
+        has_notices = Notice.query.filter_by(department_id=d.id).first()
+        has_quizzes = Quiz.query.filter_by(department_id=d.id).first()
 
-    # Upsert the official 5 departments
+        if not (has_students or has_faculty or has_clubs or has_notes or has_assignments or has_notices or has_quizzes):
+            db.session.delete(d)
+
+    # Upsert the official 8 departments
     for dept_name, dept_code, desc in depts_structure:
         dept = Department.query.filter_by(code=dept_code).first()
         if not dept:
@@ -49,6 +75,26 @@ def seed_database():
         else:
             dept.name = dept_name
             dept.description = desc
+
+    # Seed Developer / Owner Admin Account if not exists
+    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@rcpit.ac.in').lower().strip()
+    admin_password = os.environ.get('ADMIN_PASSWORD', 'Admin@Campus2026!')
+
+    admin_user = User.query.filter_by(role='admin').first()
+    if not admin_user:
+        admin_user = User.query.filter_by(email=admin_email).first()
+
+    if not admin_user:
+        admin_user = User(
+            email=admin_email,
+            full_name='Developer Admin',
+            role='admin'
+        )
+        admin_user.set_password(admin_password)
+        db.session.add(admin_user)
+    else:
+        if admin_user.role != 'admin':
+            admin_user.role = 'admin'
 
     # External Platform Directory
     if not ExternalResource.query.first():
@@ -92,10 +138,11 @@ def seed_database():
         db.session.add_all(resources)
 
     db.session.commit()
-    print("Official 5 Department structure initialized cleanly!")
+    print("Official 8 Department structure & Admin account initialized cleanly!")
 
 if __name__ == '__main__':
     from app import app
     with app.app_context():
         db.create_all()
         seed_database()
+

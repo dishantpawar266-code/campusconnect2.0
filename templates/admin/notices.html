@@ -1,0 +1,92 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Notices View - Developer Admin Panel{% endblock %}
+{% block page_heading %}Notices & Announcements Data{% endblock %}
+{% block page_subheading %}Official academic and campus club notices stored in production database{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+
+    <!-- SEARCH & FILTERS -->
+    <div class="card" style="padding: 20px;">
+        <form action="{{ url_for('admin.notices') }}" method="GET" style="display: grid; grid-template-columns: 2fr 1.5fr auto; gap: 14px; align-items: end;">
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Search Notice Title / Content</label>
+                <input type="text" name="q" value="{{ search_q }}" class="form-control" placeholder="Search notice...">
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Notice Type</label>
+                <select name="type" class="form-control">
+                    <option value="all" {% if type_filter == 'all' %}selected{% endif %}>All Types</option>
+                    <option value="academic" {% if type_filter == 'academic' %}selected{% endif %}>Academic</option>
+                    <option value="club" {% if type_filter == 'club' %}selected{% endif %}>Club</option>
+                </select>
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-primary" style="height: 42px;">
+                    <i class="fa-solid fa-search"></i> Search Notices
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Author</th>
+                        <th>Department</th>
+                        <th>Published Date</th>
+                        <th>Event Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if notices %}
+                        {% for n in notices %}
+                        <tr>
+                            <td><strong>#NOT-{{ n.id }}</strong></td>
+                            <td><strong style="color: #0f172a;">{{ n.title }}</strong></td>
+                            <td>
+                                <span class="role-pill role-{{ 'faculty' if n.notice_type == 'academic' else 'club' }}">
+                                    {{ n.notice_type }}
+                                </span>
+                            </td>
+                            <td>{{ n.author.full_name }}</td>
+                            <td>{{ n.department.code if n.department else 'All Departments' }}</td>
+                            <td><span style="font-size: 0.8rem; color: #64748b;">{{ n.created_at.strftime('%Y-%m-%d %H:%M') if n.created_at else 'N/A' }}</span></td>
+                            <td><span style="font-size: 0.8rem; color: #0d9488;">{{ n.event_date.strftime('%Y-%m-%d') if n.event_date else 'N/A' }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #94a3b8; padding: 25px;">No notice records found.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pagination.pages > 1 %}
+        <div style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.84rem; color: #64748b;">Page {{ pagination.page }} of {{ pagination.pages }}</div>
+            <div style="display: flex; gap: 8px;">
+                {% if pagination.has_prev %}
+                    <a href="{{ url_for('admin.notices', page=pagination.prev_num, q=search_q, type=type_filter) }}" class="btn btn-outline btn-sm">&larr; Previous</a>
+                {% endif %}
+                {% if pagination.has_next %}
+                    <a href="{{ url_for('admin.notices', page=pagination.next_num, q=search_q, type=type_filter) }}" class="btn btn-outline btn-sm">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

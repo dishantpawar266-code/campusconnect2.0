@@ -19,16 +19,20 @@ def create_app():
     from routes.faculty import faculty_bp
     from routes.club import club_bp
     from routes.common import common_bp
+    from routes.admin import admin_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(student_bp)
     app.register_blueprint(faculty_bp)
     app.register_blueprint(club_bp)
     app.register_blueprint(common_bp)
+    app.register_blueprint(admin_bp)
 
     @app.route('/')
     def index():
         if 'user_id' in session:
+            if session.get('role') == 'admin':
+                return redirect(url_for('admin.dashboard'))
             return redirect(url_for('auth.dashboard'))
         return redirect(url_for('auth.login'))
 
