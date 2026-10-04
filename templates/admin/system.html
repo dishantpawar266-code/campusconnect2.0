@@ -1,42 +1,91 @@
 {% extends "admin/base.html" %}
 
-{% block title %}System Overview - Developer Admin Panel{% endblock %}
-{% block page_heading %}System Telemetry & Database Overview{% endblock %}
-{% block page_subheading %}Technical metrics and real row counts across all production database tables{% endblock %}
+{% block title %}Database Overview - Developer Admin{% endblock %}
+{% block page_heading %}Database & System Overview{% endblock %}
+{% block page_subheading %}Developer telemetry, database table counts, recent activity logs, and system status{% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; gap: 28px;">
-
-    <!-- SYSTEM ENVIRONMENT CARDS -->
-    <div class="card" style="padding: 24px;">
-        <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 16px;">
-            <i class="fa-solid fa-server" style="color: #0284c7;"></i> Runtime Environment Diagnostics
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+    <!-- Available Tables and Record Counts -->
+    <div class="admin-card" style="margin-bottom: 0;">
+        <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 18px 0;">
+            <i class="fa-solid fa-table" style="color: #0284c7; margin-right: 8px;"></i> Production Database Tables & Record Counts
         </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;">
+            {% for table_name, count in table_counts.items() %}
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <div style="font-size: 0.8rem; font-weight: 700; color: #475569;">{{ table_name }}</div>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #0f172a; line-height: 1.2;">{{ count }}</div>
+                </div>
+                <div style="width: 36px; height: 36px; background: #e0f2fe; color: #0369a1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                    <i class="fa-solid fa-database"></i>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Basic System Telemetry -->
+    <div class="admin-card" style="margin-bottom: 0;">
+        <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 18px 0;">
+            <i class="fa-solid fa-server" style="color: #0d9488; margin-right: 8px;"></i> Basic System Status
+        </h3>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
             {% for key, val in env_info.items() %}
-            <div style="background: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid var(--border-color);">
-                <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">{{ key }}</div>
-                <div style="font-size: 1rem; font-weight: 800; color: #0f172a; margin-top: 4px; font-family: monospace;">{{ val }}</div>
+            <div style="padding-bottom: 10px; border-bottom: 1px solid #f1f5f9;">
+                <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">{{ key }}</div>
+                <div style="font-size: 0.92rem; font-weight: 700; color: #1e293b; margin-top: 2px; font-family: monospace;">{{ val }}</div>
             </div>
             {% endfor %}
-        </div>
-    </div>
 
-    <!-- DATABASE TABLE RECORD COUNTS -->
-    <div class="card" style="padding: 24px;">
-        <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 16px;">
-            <i class="fa-solid fa-database" style="color: #0d9488;"></i> Real Database Table Row Counts
-        </h3>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
-            {% for tbl, cnt in table_counts.items() %}
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #ffffff; border: 1px solid var(--border-color); border-radius: 8px;">
-                <span style="font-weight: 700; color: #334155; font-size: 0.9rem;">{{ tbl }}</span>
-                <span style="font-weight: 900; color: #0284c7; font-size: 1.1rem; background: #e0f2fe; padding: 2px 10px; border-radius: 12px;">{{ cnt }}</span>
+            <div style="background: #ecfdf5; border: 1px solid #a7f3d0; padding: 12px; border-radius: 10px; font-size: 0.8rem; color: #047857; margin-top: 6px;">
+                <i class="fa-solid fa-shield-check"></i> <strong>Security Standard:</strong> Database connection strings, passwords, and secret keys are securely stored in environment variables and isolated from client responses.
             </div>
-            {% endfor %}
         </div>
     </div>
+</div>
 
+<!-- Recent Database Activity Log -->
+<div class="admin-card">
+    <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 18px 0;">
+        <i class="fa-solid fa-timeline" style="color: #f59e0b; margin-right: 8px;"></i> Recent Database Activity Stream
+    </h3>
+
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Timestamp (UTC)</th>
+                    <th>Activity Event</th>
+                    <th>Details / Record Summary</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for act in recent_activity %}
+                <tr>
+                    <td style="font-family: monospace; font-size: 0.82rem; color: #475569; width: 180px;">
+                        <i class="fa-regular fa-clock" style="color: #94a3b8; margin-right: 6px;"></i>
+                        {{ act.timestamp.strftime('%Y-%m-%d %H:%M:%S') if act.timestamp else 'N/A' }}
+                    </td>
+                    <td style="width: 160px;">
+                        <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.8rem; color: {{ act.color }};">
+                            <i class="fa-solid {{ act.icon }}"></i> {{ act.type }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="font-size: 0.88rem; color: #1e293b; font-weight: 500;">{{ act.details }}</div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" style="text-align: center; color: #64748b; padding: 24px;">No recent database activity stream available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

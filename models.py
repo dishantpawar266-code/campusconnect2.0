@@ -24,6 +24,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     full_name = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(20), nullable=False) # 'student', 'faculty', 'club'
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     student_profile = db.relationship('Student', backref='user', uselist=False, cascade="all, delete-orphan")

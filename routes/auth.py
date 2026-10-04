@@ -54,6 +54,9 @@ def login():
             passcode = request.form.get('passcode')
             club = db.session.get(Club, int(club_id)) if club_id else None
             if club and (club.passcode == passcode or club.user.check_password(passcode)):
+                if hasattr(club.user, 'is_active') and not club.user.is_active:
+                    flash('Your club account has been deactivated by administrator.', 'danger')
+                    return render_template('login.html', departments=departments, clubs=clubs)
                 session['user_id'] = club.user.id
                 session['role'] = 'club'
                 session['user_name'] = club.name
@@ -65,6 +68,10 @@ def login():
 
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(password):
+            if hasattr(user, 'is_active') and not user.is_active:
+                flash('Your account has been deactivated by administrator.', 'danger')
+                return render_template('login.html', departments=departments, clubs=clubs)
+
             if role and user.role != role:
                 flash(f'Role mismatch. You registered as a {user.role.title()}.', 'danger')
                 return render_template('login.html', departments=departments, clubs=clubs)

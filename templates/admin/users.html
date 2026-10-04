@@ -1,144 +1,253 @@
 {% extends "admin/base.html" %}
 
-{% block title %}All Users - Developer Admin Panel{% endblock %}
-{% block page_heading %}Registered Users Directory{% endblock %}
-{% block page_subheading %}Search, filter and inspect real user records stored in production database{% endblock %}
+{% block title %}All Users Management - Developer Admin{% endblock %}
+{% block page_heading %}All Registered Users{% endblock %}
+{% block page_subheading %}Search, inspect non-sensitive profiles, activate/deactivate, and manage accounts{% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; gap: 24px;">
+<div class="admin-card">
+    <!-- Search & Filter Controls -->
+    <form method="GET" action="{{ url_for('admin.users') }}" style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 20px;">
+        <div style="flex: 1; min-width: 240px; position: relative;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+            <input type="text" name="q" value="{{ search_q }}" placeholder="Search by name or email..."
+                   style="width: 100%; padding: 10px 14px 10px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; outline: none;">
+        </div>
 
-    <!-- SEARCH & FILTERS BAR -->
-    <div class="card" style="padding: 20px;">
-        <form action="{{ url_for('admin.users') }}" method="GET" style="display: grid; grid-template-columns: 2fr 1.2fr 1.5fr 1.2fr auto; gap: 14px; align-items: end;">
-            
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label">Search Name / Email</label>
-                <input type="text" name="q" value="{{ search_q }}" class="form-control" placeholder="Search by name or email...">
-            </div>
+        <div style="min-width: 140px;">
+            <select name="role" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; outline: none; background: white;">
+                <option value="all" {% if role_filter == 'all' %}selected{% endif %}>All Roles</option>
+                <option value="student" {% if role_filter == 'student' %}selected{% endif %}>Students</option>
+                <option value="faculty" {% if role_filter == 'faculty' %}selected{% endif %}>Faculty</option>
+                <option value="club" {% if role_filter == 'club' %}selected{% endif %}>Clubs</option>
+                <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admins</option>
+            </select>
+        </div>
 
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label">Filter Role</label>
-                <select name="role" class="form-control">
-                    <option value="all" {% if role_filter == 'all' %}selected{% endif %}>All Roles</option>
-                    <option value="student" {% if role_filter == 'student' %}selected{% endif %}>Student</option>
-                    <option value="faculty" {% if role_filter == 'faculty' %}selected{% endif %}>Faculty</option>
-                    <option value="club" {% if role_filter == 'club' %}selected{% endif %}>Club Leader</option>
-                    <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Developer Admin</option>
-                </select>
-            </div>
+        <div style="min-width: 160px;">
+            <select name="department_id" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; outline: none; background: white;">
+                <option value="all" {% if dept_filter == 'all' %}selected{% endif %}>All Departments</option>
+                {% for d in departments %}
+                <option value="{{ d.id }}" {% if dept_filter == d.id|string %}selected{% endif %}>{{ d.code }} - {{ d.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label">Filter Department</label>
-                <select name="department_id" class="form-control">
-                    <option value="all" {% if dept_filter == 'all' %}selected{% endif %}>All Departments</option>
-                    {% for dept in departments %}
-                        <option value="{{ dept.id }}" {% if dept_filter == str(dept.id) %}selected{% endif %}>{{ dept.name }} ({{ dept.code }})</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <div style="min-width: 130px;">
+            <select name="status" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; outline: none; background: white;">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
 
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label">Sort By</label>
-                <select name="sort" class="form-control">
-                    <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest First</option>
-                    <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest First</option>
-                </select>
-            </div>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 18px; border-radius: 8px; font-weight: 700;">
+            <i class="fa-solid fa-filter"></i> Apply Filters
+        </button>
+        {% if search_q or role_filter != 'all' or dept_filter != 'all' or status_filter != 'all' %}
+        <a href="{{ url_for('admin.users') }}" class="btn btn-outline" style="padding: 10px 14px; border-radius: 8px; font-weight: 600;">Reset</a>
+        {% endif %}
+    </form>
 
+    <!-- Users Table -->
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User Details</th>
+                    <th>Role</th>
+                    <th>Department / Specific Info</th>
+                    <th>Registered Date</th>
+                    <th>Account Status</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td style="font-weight: 700; color: #64748b;">#{{ u.id }}</td>
+                    <td>
+                        <div style="font-weight: 800; color: #0f172a; font-size: 0.92rem;">{{ u.full_name }}</div>
+                        <div style="font-size: 0.78rem; color: #64748b;">{{ u.email }}</div>
+                    </td>
+                    <td>
+                        <span class="role-pill role-{{ u.role }}">{{ u.role }}</span>
+                    </td>
+                    <td>
+                        {% if u.role == 'student' and u.student_profile %}
+                            <div style="font-weight: 700; color: #1e293b;">{{ u.student_profile.department.code }}</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">{{ u.student_profile.academic_year }} {% if u.student_profile.roll_number %}| Roll: {{ u.student_profile.roll_number }}{% endif %}</div>
+                        {% elif u.role == 'faculty' and u.faculty_profile %}
+                            <div style="font-weight: 700; color: #1e293b;">{{ u.faculty_profile.department.code }}</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">{{ u.faculty_profile.designation }}</div>
+                        {% elif u.role == 'club' and u.club_profile %}
+                            <div style="font-weight: 700; color: #1e293b;">{{ u.club_profile.name }}</div>
+                            <div style="font-size: 0.75rem; color: #64748b;">Cat: {{ u.club_profile.category }}</div>
+                        {% else %}
+                            <span style="color: #94a3b8;">System Administrator</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="font-size: 0.82rem; color: #475569;">
+                            {{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else 'Earlier' }}
+                        </div>
+                    </td>
+                    <td>
+                        {% if u.is_active is not defined or u.is_active %}
+                            <span class="status-badge status-active"><i class="fa-solid fa-circle-check"></i> Active</span>
+                        {% else %}
+                            <span class="status-badge status-inactive"><i class="fa-solid fa-circle-xmark"></i> Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                            <!-- View Non-Sensitive Profile -->
+                            <button type="button" class="btn btn-outline btn-sm" onclick="openProfileModal('{{ u.id }}', '{{ u.full_name | escape }}', '{{ u.email | escape }}', '{{ u.role }}', '{{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else 'N/A' }}', '{{ u.is_active if u.is_active is defined else True }}')" title="View Non-Sensitive Profile">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+
+                            {% if u.role != 'admin' %}
+                            <!-- Toggle Active/Inactive -->
+                            <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=u.id) }}" style="display: inline;">
+                                {% if u.is_active is not defined or u.is_active %}
+                                <button type="submit" class="btn btn-sm" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;" title="Deactivate Account">
+                                    <i class="fa-solid fa-pause"></i>
+                                </button>
+                                {% else %}
+                                <button type="submit" class="btn btn-sm" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0;" title="Activate Account">
+                                    <i class="fa-solid fa-play"></i>
+                                </button>
+                                {% endif %}
+                            </form>
+
+                            <!-- Delete User with Confirmation Modal -->
+                            <button type="button" class="btn btn-sm" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;" onclick="openDeleteModal('{{ u.id }}', '{{ u.full_name | escape }}', '{{ u.email | escape }}')" title="Delete User">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #64748b; padding: 32px;">No matching registered users found in the database.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination and pagination.pages > 1 %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; font-size: 0.85rem; color: #64748b;">
+        <div>Showing Page {{ pagination.page }} of {{ pagination.pages }} ({{ pagination.total }} Total Users)</div>
+        <div style="display: flex; gap: 6px;">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('admin.users', page=pagination.prev_num, q=search_q, role=role_filter, department_id=dept_filter, status=status_filter) }}" class="btn btn-outline btn-sm">&larr; Prev</a>
+            {% endif %}
+            {% if pagination.has_next %}
+            <a href="{{ url_for('admin.users', page=pagination.next_num, q=search_q, role=role_filter, department_id=dept_filter, status=status_filter) }}" class="btn btn-outline btn-sm">Next &rarr;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Non-Sensitive Profile Inspection Modal -->
+<div id="profileModal" class="admin-modal">
+    <div class="admin-modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 18px;">
+            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-id-card" style="color: #0284c7;"></i> User Profile Info</h3>
+            <button type="button" onclick="closeModal('profileModal')" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">&times;</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px; font-size: 0.9rem;">
             <div>
-                <button type="submit" class="btn btn-primary" style="height: 42px; width: 100%;">
-                    <i class="fa-solid fa-filter"></i> Apply Filters
+                <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Full Name</span>
+                <div id="modalFullName" style="font-weight: 800; color: #0f172a; font-size: 1.05rem;"></div>
+            </div>
+            <div>
+                <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Email Address</span>
+                <div id="modalEmail" style="font-weight: 600; color: #334155;"></div>
+            </div>
+            <div style="display: flex; gap: 20px;">
+                <div>
+                    <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Role</span>
+                    <div id="modalRole"></div>
+                </div>
+                <div>
+                    <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Status</span>
+                    <div id="modalStatus"></div>
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Registration Date</span>
+                <div id="modalCreatedAt" style="font-weight: 600; color: #475569;"></div>
+            </div>
+            <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.78rem; color: #64748b;">
+                <i class="fa-solid fa-shield" style="color: #10b981;"></i> Passwords, hashes, tokens, and session keys are strictly protected and never stored or returned in response payload.
+            </div>
+        </div>
+        <div style="text-align: right; margin-top: 20px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('profileModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Strong Delete Confirmation Modal -->
+<div id="deleteModal" class="admin-modal">
+    <div class="admin-modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #fee2e2; padding-bottom: 14px; margin-bottom: 18px;">
+            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #991b1b;"><i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> Permanent Account Deletion</h3>
+            <button type="button" onclick="closeModal('deleteModal')" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">&times;</button>
+        </div>
+        <form id="deleteForm" method="POST" action="">
+            <p style="font-size: 0.88rem; color: #334155; line-height: 1.4; margin-top: 0;">
+                You are about to permanently delete user <strong id="deleteUserName"></strong> (<span id="deleteUserEmail"></span>) from the production database.
+            </p>
+            <div style="background: #fff1f2; border: 1px solid #fecdd3; padding: 12px; border-radius: 8px; font-size: 0.8rem; color: #9f1239; margin-bottom: 16px;">
+                <strong>Warning:</strong> This operation cannot be undone. All student/faculty profiles, uploaded notes, and submitted tasks will be permanently deleted.
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">
+                    Type <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #b91c1c;">DELETE</code> to confirm:
+                </label>
+                <input type="text" name="confirm_text" placeholder="DELETE" required
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; outline: none;">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('deleteModal')">Cancel</button>
+                <button type="submit" class="btn btn-sm" style="background: #dc2626; color: white; border: none; font-weight: 800;">
+                    <i class="fa-solid fa-trash-can"></i> Confirm Deletion
                 </button>
             </div>
         </form>
     </div>
-
-    <!-- USERS TABLE CARD -->
-    <div class="card" style="padding: 0; overflow: hidden;">
-        <div style="padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-weight: 800; color: #0f172a; font-size: 0.95rem;">
-                Showing Real Registered Users (Total: {{ pagination.total }})
-            </div>
-            {% if search_q or role_filter != 'all' or dept_filter != 'all' %}
-                <a href="{{ url_for('admin.users') }}" style="font-size: 0.8rem; color: #ef4444; text-decoration: none; font-weight: 700;">
-                    <i class="fa-solid fa-xmark"></i> Clear Filters
-                </a>
-            {% endif %}
-        </div>
-
-        <div class="table-responsive">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>User ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Department</th>
-                        <th>Registration Date</th>
-                        <th>Security Hash</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if users %}
-                        {% for u in users %}
-                        <tr>
-                            <td><strong style="color: #64748b;">#{{ u.id }}</strong></td>
-                            <td>
-                                <div style="font-weight: 800; color: #0f172a;">{{ u.full_name }}</div>
-                            </td>
-                            <td><span style="color: #334155; font-family: monospace;">{{ u.email }}</span></td>
-                            <td>
-                                <span class="role-pill role-{{ u.role }}">{{ u.role }}</span>
-                            </td>
-                            <td>
-                                {% if u.role == 'student' and u.student_profile and u.student_profile.department %}
-                                    <span style="font-weight: 700; color: #0284c7;">{{ u.student_profile.department.code }}</span>
-                                {% elif u.role == 'faculty' and u.faculty_profile and u.faculty_profile.department %}
-                                    <span style="font-weight: 700; color: #d97706;">{{ u.faculty_profile.department.code }}</span>
-                                {% elif u.role == 'club' and u.club_profile and u.club_profile.department %}
-                                    <span style="font-weight: 700; color: #9333ea;">{{ u.club_profile.department.code }}</span>
-                                {% else %}
-                                    <span style="color: #94a3b8;">General / Admin</span>
-                                {% endif %}
-                            </td>
-                            <td><span style="font-size: 0.8rem; color: #64748b;">{{ u.created_at.strftime('%Y-%m-%d %H:%M:%S') if u.created_at else 'N/A' }}</span></td>
-                            <td>
-                                <span style="font-size: 0.72rem; color: #166534; background: #dcfce7; padding: 2px 8px; border-radius: 4px; font-family: monospace;">
-                                    <i class="fa-solid fa-lock"></i> [PROTECTED HASH]
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">
-                                No real user records found matching the specified filters.
-                            </td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- PAGINATION CONTROLS -->
-        {% if pagination.pages > 1 %}
-        <div style="padding: 16px 20px; background: #ffffff; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-size: 0.84rem; color: #64748b;">
-                Page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages }}</strong>
-            </div>
-            <div style="display: flex; gap: 8px;">
-                {% if pagination.has_prev %}
-                    <a href="{{ url_for('admin.users', page=pagination.prev_num, q=search_q, role=role_filter, department_id=dept_filter, sort=sort_by) }}" class="btn btn-outline btn-sm">&larr; Previous</a>
-                {% endif %}
-
-                {% if pagination.has_next %}
-                    <a href="{{ url_for('admin.users', page=pagination.next_num, q=search_q, role=role_filter, department_id=dept_filter, sort=sort_by) }}" class="btn btn-outline btn-sm">Next &rarr;</a>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
-    </div>
-
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openProfileModal(id, name, email, role, createdAt, isActive) {
+        document.getElementById('modalFullName').innerText = name;
+        document.getElementById('modalEmail').innerText = email;
+        document.getElementById('modalRole').innerHTML = `<span class="role-pill role-${role}">${role}</span>`;
+        document.getElementById('modalStatus').innerHTML = isActive === 'True' || isActive === true ?
+            '<span class="status-badge status-active"><i class="fa-solid fa-check"></i> Active</span>' :
+            '<span class="status-badge status-inactive"><i class="fa-solid fa-ban"></i> Inactive</span>';
+        document.getElementById('modalCreatedAt').innerText = createdAt;
+        document.getElementById('profileModal').classList.add('show');
+    }
+
+    function openDeleteModal(id, name, email) {
+        document.getElementById('deleteUserName').innerText = name;
+        document.getElementById('deleteUserEmail').innerText = email;
+        document.getElementById('deleteForm').action = `/admin/users/${id}/delete`;
+        document.getElementById('deleteModal').classList.add('show');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('show');
+    }
+</script>
 {% endblock %}

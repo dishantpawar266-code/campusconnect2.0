@@ -1,91 +1,177 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Students View - Developer Admin Panel{% endblock %}
-{% block page_heading %}Student Directory{% endblock %}
-{% block page_subheading %}Detailed inspection of all student profiles registered in production database{% endblock %}
+{% block title %}Registered Students - Developer Admin{% endblock %}
+{% block page_heading %}Registered Students Management{% endblock %}
+{% block page_subheading %}Dedicated view of all student accounts in the production database{% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; gap: 24px;">
+<div class="admin-card">
+    <!-- Filter Controls -->
+    <form method="GET" action="{{ url_for('admin.students') }}" style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 20px;">
+        <div style="flex: 1; min-width: 240px; position: relative;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+            <input type="text" name="q" value="{{ search_q }}" placeholder="Search student name, email, or roll no..."
+                   style="width: 100%; padding: 10px 14px 10px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; outline: none;">
+        </div>
 
-    <!-- SEARCH & FILTERS -->
-    <div class="card" style="padding: 20px;">
-        <form action="{{ url_for('admin.students') }}" method="GET" style="display: grid; grid-template-columns: 2fr 1.5fr auto; gap: 14px; align-items: end;">
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label">Search Student Name / Email / Roll No.</label>
-                <input type="text" name="q" value="{{ search_q }}" class="form-control" placeholder="Search student...">
+        <div style="min-width: 180px;">
+            <select name="department_id" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; outline: none; background: white;">
+                <option value="all" {% if dept_filter == 'all' %}selected{% endif %}>All Departments</option>
+                {% for d in departments %}
+                <option value="{{ d.id }}" {% if dept_filter == d.id|string %}selected{% endif %}>{{ d.code }} - {{ d.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="min-width: 150px;">
+            <select name="academic_year" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; outline: none; background: white;">
+                <option value="all" {% if year_filter == 'all' %}selected{% endif %}>All Years</option>
+                <option value="First Year" {% if 'First' in year_filter %}selected{% endif %}>First Year (FE)</option>
+                <option value="Second Year" {% if 'Second' in year_filter %}selected{% endif %}>Second Year (SE)</option>
+                <option value="Third Year" {% if 'Third' in year_filter %}selected{% endif %}>Third Year (TE)</option>
+                <option value="Final Year" {% if 'Final' in year_filter %}selected{% endif %}>Final Year (BE)</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="padding: 10px 18px; border-radius: 8px; font-weight: 700;">
+            <i class="fa-solid fa-filter"></i> Search Students
+        </button>
+        {% if search_q or dept_filter != 'all' or year_filter != 'all' %}
+        <a href="{{ url_for('admin.students') }}" class="btn btn-outline" style="padding: 10px 14px; border-radius: 8px; font-weight: 600;">Reset</a>
+        {% endif %}
+    </form>
+
+    <!-- Students Table -->
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Email Address</th>
+                    <th>Department</th>
+                    <th>Academic Year</th>
+                    <th>Roll Number</th>
+                    <th>Joined Date</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for st in students %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 800; color: #0f172a; font-size: 0.92rem;">{{ st.user.full_name }}</div>
+                        <span class="role-pill role-student" style="font-size: 0.68rem; margin-top: 2px;">Student</span>
+                    </td>
+                    <td>
+                        <div style="font-size: 0.85rem; color: #334155; font-family: monospace;">{{ st.user.email }}</div>
+                    </td>
+                    <td>
+                        <span style="font-weight: 700; color: #0284c7;">{{ st.department.code }}</span>
+                        <div style="font-size: 0.74rem; color: #64748b;">{{ st.department.name }}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600; color: #334155; font-size: 0.84rem;">{{ st.academic_year }}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 700; color: #475569; font-size: 0.85rem;">{{ st.roll_number or 'N/A' }}</div>
+                    </td>
+                    <td>
+                        <div style="font-size: 0.8rem; color: #64748b;">
+                            {{ st.user.created_at.strftime('%b %d, %Y') if st.user.created_at else 'Earlier' }}
+                        </div>
+                    </td>
+                    <td>
+                        {% if st.user.is_active is not defined or st.user.is_active %}
+                            <span class="status-badge status-active"><i class="fa-solid fa-circle-check"></i> Active</span>
+                        {% else %}
+                            <span class="status-badge status-inactive"><i class="fa-solid fa-circle-xmark"></i> Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                            <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=st.user.id) }}" style="display: inline;">
+                                {% if st.user.is_active is not defined or st.user.is_active %}
+                                <button type="submit" class="btn btn-sm" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;" title="Deactivate Student">
+                                    <i class="fa-solid fa-pause"></i>
+                                </button>
+                                {% else %}
+                                <button type="submit" class="btn btn-sm" style="background: #dcfce7; color: #166534; border: 1px solid #bbf7d0;" title="Activate Student">
+                                    <i class="fa-solid fa-play"></i>
+                                </button>
+                                {% endif %}
+                            </form>
+
+                            <button type="button" class="btn btn-sm" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;" onclick="openDeleteModal('{{ st.user.id }}', '{{ st.user.full_name | escape }}', '{{ st.user.email | escape }}')" title="Delete Student">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: #64748b; padding: 32px;">No registered student records found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination and pagination.pages > 1 %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; font-size: 0.85rem; color: #64748b;">
+        <div>Showing Page {{ pagination.page }} of {{ pagination.pages }} ({{ pagination.total }} Total Students)</div>
+        <div style="display: flex; gap: 6px;">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('admin.students', page=pagination.prev_num, q=search_q, department_id=dept_filter, academic_year=year_filter) }}" class="btn btn-outline btn-sm">&larr; Prev</a>
+            {% endif %}
+            {% if pagination.has_next %}
+            <a href="{{ url_for('admin.students', page=pagination.next_num, q=search_q, department_id=dept_filter, academic_year=year_filter) }}" class="btn btn-outline btn-sm">Next &rarr;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="admin-modal">
+    <div class="admin-modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #fee2e2; padding-bottom: 14px; margin-bottom: 18px;">
+            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #991b1b;"><i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> Delete Student Account</h3>
+            <button type="button" onclick="closeModal('deleteModal')" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #64748b;">&times;</button>
+        </div>
+        <form id="deleteForm" method="POST" action="">
+            <p style="font-size: 0.88rem; color: #334155; line-height: 1.4; margin-top: 0;">
+                You are deleting student <strong id="deleteUserName"></strong> (<span id="deleteUserEmail"></span>).
+            </p>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">
+                    Type <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #b91c1c;">DELETE</code> to confirm:
+                </label>
+                <input type="text" name="confirm_text" placeholder="DELETE" required
+                       style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; outline: none;">
             </div>
-
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label">Filter Department</label>
-                <select name="department_id" class="form-control">
-                    <option value="all" {% if dept_filter == 'all' %}selected{% endif %}>All Departments</option>
-                    {% for dept in departments %}
-                        <option value="{{ dept.id }}" {% if dept_filter == str(dept.id) %}selected{% endif %}>{{ dept.name }} ({{ dept.code }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <button type="submit" class="btn btn-primary" style="height: 42px;">
-                    <i class="fa-solid fa-search"></i> Search Students
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('deleteModal')">Cancel</button>
+                <button type="submit" class="btn btn-sm" style="background: #dc2626; color: white; border: none; font-weight: 800;">
+                    <i class="fa-solid fa-trash-can"></i> Confirm Deletion
                 </button>
             </div>
         </form>
     </div>
-
-    <!-- TABLE -->
-    <div class="card" style="padding: 0; overflow: hidden;">
-        <div class="table-responsive">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Student ID</th>
-                        <th>Full Name</th>
-                        <th>Email</th>
-                        <th>Department</th>
-                        <th>Academic Year</th>
-                        <th>Roll / PRN No.</th>
-                        <th>Tasks</th>
-                        <th>Doubts</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if students %}
-                        {% for s in students %}
-                        <tr>
-                            <td><strong>#ST-{{ s.id }}</strong></td>
-                            <td><strong style="color: #0f172a;">{{ s.user.full_name }}</strong></td>
-                            <td><span style="font-family: monospace; font-size: 0.82rem;">{{ s.user.email }}</span></td>
-                            <td><span class="role-pill role-student">{{ s.department.code }}</span></td>
-                            <td>{{ s.academic_year }}</td>
-                            <td><code>{{ s.roll_number or 'N/A' }}</code></td>
-                            <td><span style="font-weight: 700;">{{ s.tasks | length }}</span></td>
-                            <td><span style="font-weight: 700;">{{ s.doubts | length }}</span></td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="8" style="text-align: center; color: #94a3b8; padding: 25px;">No student records found.</td>
-                        </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
-
-        {% if pagination.pages > 1 %}
-        <div style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-size: 0.84rem; color: #64748b;">Page {{ pagination.page }} of {{ pagination.pages }}</div>
-            <div style="display: flex; gap: 8px;">
-                {% if pagination.has_prev %}
-                    <a href="{{ url_for('admin.students', page=pagination.prev_num, q=search_q, department_id=dept_filter) }}" class="btn btn-outline btn-sm">&larr; Previous</a>
-                {% endif %}
-                {% if pagination.has_next %}
-                    <a href="{{ url_for('admin.students', page=pagination.next_num, q=search_q, department_id=dept_filter) }}" class="btn btn-outline btn-sm">Next &rarr;</a>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
-    </div>
-
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openDeleteModal(id, name, email) {
+        document.getElementById('deleteUserName').innerText = name;
+        document.getElementById('deleteUserEmail').innerText = email;
+        document.getElementById('deleteForm').action = `/admin/users/${id}/delete`;
+        document.getElementById('deleteModal').classList.add('show');
+    }
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('show');
+    }
+</script>
 {% endblock %}

@@ -1,3 +1,4 @@
+import os
 import unittest
 from app import app
 from database import db
@@ -32,9 +33,9 @@ class CampusConnectRealDataTestCase(unittest.TestCase):
     def test_admin_authentication_and_security(self):
         client = self.client
 
-        # 1. Unauthenticated request to /admin/dashboard must be redirected to /admin/login
+        # 1. Unauthenticated request to /admin/dashboard must redirect to /admin/login
         res = client.get('/admin/dashboard', follow_redirects=True)
-        self.assertIn(b'Admin Authentication', res.data)
+        self.assertIn(b'Developer Admin Portal', res.data)
 
         # 2. Login as regular student and attempt to access /admin/dashboard (Must be blocked)
         client.post('/register/student', data={
@@ -51,17 +52,86 @@ class CampusConnectRealDataTestCase(unittest.TestCase):
         # Accessing /admin/dashboard as student
         res = client.get('/admin/dashboard', follow_redirects=True)
         self.assertIn(b'Admin access required', res.data)
-        self.assertIn(b'Admin Authentication', res.data)
+        self.assertIn(b'Developer Admin Portal', res.data)
 
         client.get('/logout')
 
-        # 3. Authenticate as Developer Admin
+        # 3. Authenticate as Developer Admin using ADMIN_PASSWORD env var
         res = client.post('/admin/login', data={
             'email': 'admin@rcpit.ac.in',
-            'password': 'Admin@Campus2026!'
+            'password': os.environ.get('ADMIN_PASSWORD', 'Admin@Campus2026!')
         }, follow_redirects=True)
-        self.assertIn(b'Admin Telemetry', res.data)
+        self.assertIn(b'Production Overview', res.data)
         self.assertIn(b'Normal Student', res.data)  # Shows real student registered in DB!
+
+    def test_admin_dashboard_full_navigation_and_user_management(self):
+        client = self.client
+
+        # 1. Register a student user
+        client.post('/register/student', data={
+            'full_name': 'Test Student User',
+            'email': 'teststudent@rcpit.ac.in',
+            'password': 'pass123student',
+            'department_id': self.dept_aiml_id,
+            'academic_year': 'Second Year (SE)',
+            'roll_number': '22AIML007'
+        }, follow_redirects=True)
+
+        # 2. Login as Developer Admin
+        client.post('/admin/login', data={
+            'email': 'admin@rcpit.ac.in',
+            'password': os.environ.get('ADMIN_PASSWORD', 'Admin@Campus2026!')
+        }, follow_redirects=True)
+
+        # 3. Test all admin navigation endpoints load live data cleanly
+        endpoints = [
+            '/admin/dashboard',
+            '/admin/students',
+            '/admin/faculty',
+            '/admin/clubs',
+            '/admin/users',
+            '/admin/notes',
+            '/admin/notices',
+            '/admin/assignments',
+            '/admin/doubts',
+            '/admin/database',
+            '/admin/settings'
+        ]
+        for ep in endpoints:
+            res = client.get(ep)
+            self.assertEqual(res.status_code, 200, f"Endpoint {ep} failed with status {res.status_code}")
+            self.assertIn(b'Developer', res.data)
+
+        # 4. Toggle User Status (Deactivate Student)
+        with app.app_context():
+            st_user = User.query.filter_by(email='teststudent@rcpit.ac.in').first()
+            st_user_id = st_user.id
+
+        res = client.post(f'/admin/users/{st_user_id}/toggle-status', follow_redirects=True)
+        self.assertIn(b'has been deactivated', res.data)
+
+        # 5. Verify Deactivated Student cannot log into main portal
+        client.get('/admin/logout')
+        res = client.post('/login', data={'role': 'student', 'email': 'teststudent@rcpit.ac.in', 'password': 'pass123student'}, follow_redirects=True)
+        self.assertIn(b'Your account has been deactivated by administrator', res.data)
+
+        # 6. Re-authenticate as Admin & Activate Student
+        client.post('/admin/login', data={
+            'email': 'admin@rcpit.ac.in',
+            'password': os.environ.get('ADMIN_PASSWORD', 'Admin@Campus2026!')
+        }, follow_redirects=True)
+
+        res = client.post(f'/admin/users/{st_user_id}/toggle-status', follow_redirects=True)
+        self.assertIn(b'has been activated', res.data)
+
+        # 7. Delete User with confirmation
+        res = client.post(f'/admin/users/{st_user_id}/delete', data={'confirm_text': 'DELETE'}, follow_redirects=True)
+        self.assertIn(b'permanently deleted', res.data)
+
+        # 8. Logout Admin & verify security protection
+        client.get('/admin/logout')
+        res = client.get('/admin/dashboard', follow_redirects=True)
+        self.assertIn(b'Developer Admin Portal', res.data)
 
     def test_full_real_user_lifecycle_and_isolation(self):
         client = self.client
@@ -229,4 +299,3 @@ class CampusConnectRealDataTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

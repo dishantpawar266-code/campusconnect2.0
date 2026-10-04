@@ -5,6 +5,13 @@ from models import Department, ExternalResource, User
 def seed_database():
     print("Syncing official 8 departments, admin user, and external resources...")
 
+    # Ensure is_active column exists in users table
+    try:
+        db.session.execute(db.text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
     # Official Department Structure (ONLY these 8 departments, NO divisions)
     depts_structure = [
         (

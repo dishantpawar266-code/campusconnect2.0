@@ -1,0 +1,64 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Developer Settings - Admin Dashboard{% endblock %}
+{% block page_heading %}Developer Console Settings & Security{% endblock %}
+{% block page_subheading %}Session security, environment variable configuration, and deployment settings{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- Active Session Security -->
+    <div class="admin-card">
+        <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 18px 0;">
+            <i class="fa-solid fa-lock" style="color: #0284c7; margin-right: 8px;"></i> Active Admin Session Security
+        </h3>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Authenticated Admin Name</div>
+                <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin-top: 2px;">{{ session_info.user_name }}</div>
+            </div>
+
+            <div style="padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Admin Email Identity</div>
+                <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin-top: 2px; font-family: monospace;">{{ session_info.admin_email }}</div>
+            </div>
+
+            <div style="padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Environment Password Configured</div>
+                <div style="font-size: 0.95rem; font-weight: 800; color: #059669; margin-top: 2px;">
+                    {% if session_info.has_env_password %}
+                        <i class="fa-solid fa-check-circle"></i> `ADMIN_PASSWORD` defined in Environment
+                    {% else %}
+                        <i class="fa-solid fa-info-circle" style="color: #d97706;"></i> Default fallback secret active (Set `ADMIN_PASSWORD` in .env)
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="margin-top: 10px;">
+                <a href="{{ url_for('admin.logout') }}" class="btn btn-sm" style="background: #ef4444; color: white; border: none; font-weight: 700; width: 100%; text-align: center; padding: 10px;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Secure Logout Admin Session
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Production Deployment Guidelines -->
+    <div class="admin-card">
+        <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 18px 0;">
+            <i class="fa-solid fa-cloud-arrow-up" style="color: #0d9488; margin-right: 8px;"></i> Render / Production Secret Configuration
+        </h3>
+
+        <div style="font-size: 0.88rem; color: #334155; line-height: 1.6;">
+            <p style="margin-top: 0;">To ensure maximum security in cloud environments (Render, AWS, Heroku):</p>
+            <ol style="padding-left: 20px; margin-bottom: 16px;">
+                <li>Set <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: 700;">ADMIN_PASSWORD</code> in your platform's Environment Secrets.</li>
+                <li>Set <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: 700;">SECRET_KEY</code> for Flask session encryption.</li>
+                <li>Ensure <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: 700;">.env</code> is listed in <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: 700;">.gitignore</code> and never committed to GitHub.</li>
+            </ol>
+            <div style="background: #f0f9ff; border: 1px solid #bae6fd; padding: 14px; border-radius: 10px; font-size: 0.82rem; color: #0369a1;">
+                <i class="fa-solid fa-shield-halved"></i> <strong>Zero Credentials Disclosure:</strong> Admin passwords, password hashes, and database credentials are never transmitted to frontend clients.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

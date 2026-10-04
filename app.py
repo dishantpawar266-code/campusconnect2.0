@@ -12,6 +12,7 @@ def create_app():
 
     # Initialize extensions
     db.init_app(app)
+    app.jinja_env.globals.update(getattr=getattr)
 
     # Register Blueprints
     from routes.auth import auth_bp
