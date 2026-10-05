@@ -31,6 +31,10 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'campus_connect_secret_key_2026_rcpit')
     SQLALCHEMY_DATABASE_URI = database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    } if database_url and database_url.startswith("postgresql") else {}
     UPLOAD_FOLDER = upload_folder
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max file upload size
 

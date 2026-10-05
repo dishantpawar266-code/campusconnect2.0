@@ -95,28 +95,39 @@ def register_student():
     academic_year = request.form.get('academic_year')
     roll_number = request.form.get('roll_number', '').strip()
 
-    if not full_name or not email or not password or not department_id:
+    if not full_name or not email or not password or not department_id or not academic_year:
         flash('Please fill in all required fields.', 'danger')
         return redirect(url_for('auth.login'))
 
-    existing = User.query.filter_by(email=email).first()
-    if existing:
+    existing_email = User.query.filter_by(email=email).first()
+    if existing_email:
         flash('Email address is already registered.', 'warning')
         return redirect(url_for('auth.login'))
 
-    user = User(email=email, full_name=full_name, role='student')
-    user.set_password(password)
-    db.session.add(user)
-    db.session.flush()
+    if roll_number:
+        existing_roll = Student.query.filter_by(roll_number=roll_number).first()
+        if existing_roll:
+            flash('Roll number is already registered to another student.', 'warning')
+            return redirect(url_for('auth.login'))
 
-    student = Student(
-        user_id=user.id,
-        department_id=int(department_id),
-        academic_year=academic_year,
-        roll_number=roll_number
-    )
-    db.session.add(student)
-    db.session.commit()
+    try:
+        user = User(email=email, full_name=full_name, role='student')
+        user.set_password(password)
+        db.session.add(user)
+        db.session.flush()
+
+        student = Student(
+            user_id=user.id,
+            department_id=int(department_id),
+            academic_year=academic_year,
+            roll_number=roll_number if roll_number else None
+        )
+        db.session.add(student)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        flash('Registration failed due to a database error. Please try again.', 'danger')
+        return redirect(url_for('auth.login'))
 
     flash('Student account registered successfully! Please log in.', 'success')
     return redirect(url_for('auth.login'))
@@ -130,23 +141,33 @@ def register_faculty():
     designation = request.form.get('designation')
     specialization = request.form.get('specialization', '').strip()
 
-    if not full_name or not email or not password or not department_id:
+    if not full_name or not email or not password or not department_id or not designation:
         flash('Please fill in all required fields.', 'danger')
         return redirect(url_for('auth.login'))
 
-    existing = User.query.filter_by(email=email).first()
-    if existing:
+    existing_email = User.query.filter_by(email=email).first()
+    if existing_email:
         flash('Email address is already registered.', 'warning')
         return redirect(url_for('auth.login'))
 
-    user = User(email=email, full_name=full_name, role='faculty')
-    user.set_password(password)
-    db.session.add(user)
-    db.session.flush()
+    try:
+        user = User(email=email, full_name=full_name, role='faculty')
+        user.set_password(password)
+        db.session.add(user)
+        db.session.flush()
 
-    faculty = Faculty(user_id=user.id, department_id=int(department_id), designation=designation, specialization=specialization)
-    db.session.add(faculty)
-    db.session.commit()
+        faculty = Faculty(
+            user_id=user.id,
+            department_id=int(department_id),
+            designation=designation,
+            specialization=specialization
+        )
+        db.session.add(faculty)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        flash('Registration failed due to a database error. Please try again.', 'danger')
+        return redirect(url_for('auth.login'))
 
     flash('Faculty account registered successfully! Please log in.', 'success')
     return redirect(url_for('auth.login'))
@@ -167,19 +188,32 @@ def register_club():
         flash('Please fill in all required fields.', 'danger')
         return redirect(url_for('auth.login'))
 
-    existing = User.query.filter_by(email=email).first()
-    if existing:
+    existing_email = User.query.filter_by(email=email).first()
+    if existing_email:
         flash('Club email address is already registered.', 'warning')
         return redirect(url_for('auth.login'))
 
-    user = User(email=email, full_name=club_name, role='club')
-    user.set_password(passcode)
-    db.session.add(user)
-    db.session.flush()
+    try:
+        user = User(email=email, full_name=club_name, role='club')
+        user.set_password(passcode)
+        db.session.add(user)
+        db.session.flush()
 
-    club = Club(user_id=user.id, department_id=department_id, name=club_name, category=category, leader_name=leader_name, description=description, passcode=passcode)
-    db.session.add(club)
-    db.session.commit()
+        club = Club(
+            user_id=user.id,
+            department_id=department_id,
+            name=club_name,
+            category=category,
+            leader_name=leader_name,
+            description=description,
+            passcode=passcode
+        )
+        db.session.add(club)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        flash('Registration failed due to a database error. Please try again.', 'danger')
+        return redirect(url_for('auth.login'))
 
     flash('Campus Club registered successfully! Please log in.', 'success')
     return redirect(url_for('auth.login'))

@@ -5,12 +5,30 @@ from models import Department, ExternalResource, User
 def seed_database():
     print("Syncing official 8 departments, admin user, and external resources...")
 
-    # Ensure is_active column exists in users table
-    try:
-        db.session.execute(db.text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1"))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
+    # Ensure is_active and updated_at columns exist in tables if migrating existing schemas
+    dialect = db.engine.dialect.name
+    if dialect == 'postgresql':
+        stmts = [
+            "ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE",
+            "ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+            "ALTER TABLE students ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+            "ALTER TABLE faculty ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+            "ALTER TABLE clubs ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        ]
+    else:
+        stmts = [
+            "ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1",
+            "ALTER TABLE users ADD COLUMN updated_at DATETIME",
+            "ALTER TABLE students ADD COLUMN updated_at DATETIME",
+            "ALTER TABLE faculty ADD COLUMN updated_at DATETIME",
+            "ALTER TABLE clubs ADD COLUMN updated_at DATETIME"
+        ]
+    for stmt in stmts:
+        try:
+            db.session.execute(db.text(stmt))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
     # Official Department Structure (ONLY these 8 departments, NO divisions)
     depts_structure = [

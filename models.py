@@ -26,6 +26,7 @@ class User(db.Model):
     role = db.Column(db.String(20), nullable=False) # 'student', 'faculty', 'club'
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     student_profile = db.relationship('Student', backref='user', uselist=False, cascade="all, delete-orphan")
     faculty_profile = db.relationship('Faculty', backref='user', uselist=False, cascade="all, delete-orphan")
@@ -45,6 +46,7 @@ class Student(db.Model):
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
     academic_year = db.Column(db.String(30), nullable=False) # FE, SE, TE, BE
     roll_number = db.Column(db.String(30), nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     tasks = db.relationship('Task', backref='student', lazy=True, cascade="all, delete-orphan")
     doubts = db.relationship('Doubt', backref='student', lazy=True)
@@ -58,6 +60,7 @@ class Faculty(db.Model):
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
     designation = db.Column(db.String(100), nullable=False) # Assistant Professor, HOD, etc.
     specialization = db.Column(db.String(150), nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     assignments = db.relationship('Assignment', backref='faculty', lazy=True)
     quizzes = db.relationship('Quiz', backref='faculty', lazy=True)
@@ -73,6 +76,7 @@ class Club(db.Model):
     leader_name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
     passcode = db.Column(db.String(100), nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     notices = db.relationship('Notice', backref='club', lazy=True)
     doubts = db.relationship('Doubt', backref='club', lazy=True)
