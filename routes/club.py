@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 from database import db
 from models import User, Club, Department, Notice, Doubt, DoubtReply
 from routes.auth import login_required, role_required
+from storage import upload_file_to_storage
 
 club_bp = Blueprint('club', __name__, url_prefix='/club')
 
@@ -60,11 +61,7 @@ def create_notice():
     file = request.files.get('file')
     filename = None
     if file and allowed_file(file.filename):
-        sec_filename = secure_filename(file.filename)
-        filename = f"club_notice_{club.id}_{int(datetime.utcnow().timestamp())}_{sec_filename}"
-        upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        os.makedirs(os.path.dirname(upload_path), exist_ok=True)
-        file.save(upload_path)
+        filename = upload_file_to_storage(file, prefix=f"club_notice_{club.id}")
 
     if title and content:
         notice = Notice(
@@ -100,11 +97,7 @@ def reply_doubt(doubt_id):
     file = request.files.get('file')
     filename = None
     if file and allowed_file(file.filename):
-        sec_filename = secure_filename(file.filename)
-        filename = f"club_ans_{user.id}_{int(datetime.utcnow().timestamp())}_{sec_filename}"
-        upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        os.makedirs(os.path.dirname(upload_path), exist_ok=True)
-        file.save(upload_path)
+        filename = upload_file_to_storage(file, prefix=f"club_ans_{user.id}")
 
     if reply_text:
         reply = DoubtReply(doubt_id=doubt.id, responder_id=user.id, reply_text=reply_text, file_path=filename)

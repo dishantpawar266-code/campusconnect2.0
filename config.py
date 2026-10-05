@@ -3,7 +3,7 @@ import shutil
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-IS_SERVERLESS = 'NETLIFY' in os.environ or 'AWS_LAMBDA_FUNCTION_NAME' in os.environ or 'LAMBDA_TASK_ROOT' in os.environ or 'RENDER' in os.environ
+IS_SERVERLESS = 'VERCEL' in os.environ or 'NETLIFY' in os.environ or 'AWS_LAMBDA_FUNCTION_NAME' in os.environ or 'LAMBDA_TASK_ROOT' in os.environ or 'RENDER' in os.environ
 
 if IS_SERVERLESS:
     db_path = '/tmp/campus_connect.db'
@@ -36,6 +36,8 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
         "pool_recycle": 300,
+        "pool_size": 10,
+        "max_overflow": 20,
     } if database_url and database_url.startswith("postgresql") else {}
     UPLOAD_FOLDER = upload_folder
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max file upload size

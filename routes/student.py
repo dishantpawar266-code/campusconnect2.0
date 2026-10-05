@@ -9,6 +9,7 @@ from models import (
     Notice, Quiz, QuizQuestion, QuizAttempt, ExternalResource
 )
 from routes.auth import login_required, role_required
+from storage import upload_file_to_storage, get_file_download_response
 
 student_bp = Blueprint('student', __name__, url_prefix='/student')
 
@@ -180,11 +181,7 @@ def upload_note():
 
     filename = None
     if file and allowed_file(file.filename):
-        sec_filename = secure_filename(file.filename)
-        filename = f"student_{user.id}_{int(datetime.utcnow().timestamp())}_{sec_filename}"
-        upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        os.makedirs(os.path.dirname(upload_path), exist_ok=True)
-        file.save(upload_path)
+        filename = upload_file_to_storage(file, prefix=f"student_{user.id}")
 
     if title and subject:
         note = Note(
@@ -255,11 +252,7 @@ def submit_doubt():
     file = request.files.get('file')
     filename = None
     if file and allowed_file(file.filename):
-        sec_filename = secure_filename(file.filename)
-        filename = f"doubt_{user.id}_{int(datetime.utcnow().timestamp())}_{sec_filename}"
-        upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        os.makedirs(os.path.dirname(upload_path), exist_ok=True)
-        file.save(upload_path)
+        filename = upload_file_to_storage(file, prefix=f"doubt_{user.id}")
 
     if title and question:
         doubt = Doubt(
@@ -322,11 +315,7 @@ def submit_assignment(assignment_id):
 
     filename = None
     if file and allowed_file(file.filename):
-        sec_filename = secure_filename(file.filename)
-        filename = f"asgn_sub_{student.id}_{assignment_id}_{int(datetime.utcnow().timestamp())}_{sec_filename}"
-        upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        os.makedirs(os.path.dirname(upload_path), exist_ok=True)
-        file.save(upload_path)
+        filename = upload_file_to_storage(file, prefix=f"asgn_sub_{student.id}_{assignment_id}")
 
     existing_sub = AssignmentSubmission.query.filter_by(assignment_id=assignment.id, student_id=student.id).first()
     if existing_sub:
@@ -429,4 +418,4 @@ def quiz_results(attempt_id):
 @student_bp.route('/download/<path:filename>')
 @login_required
 def download_file(filename):
-    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+    return get_file_download_response(filename)
