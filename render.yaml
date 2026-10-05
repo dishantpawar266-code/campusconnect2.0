@@ -2,7 +2,7 @@ services:
   - type: web
     name: campus-connect
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
       - key: PYTHON_VERSION
@@ -10,4 +10,12 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: campus-connect-db
+          property: connectionString
+
+databases:
+  - name: campus-connect-db
+    databaseName: campus_connect_db
+    user: campus_user
+    plan: free

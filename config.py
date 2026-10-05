@@ -3,7 +3,7 @@ import shutil
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-IS_SERVERLESS = 'NETLIFY' in os.environ or 'AWS_LAMBDA_FUNCTION_NAME' in os.environ or 'LAMBDA_TASK_ROOT' in os.environ
+IS_SERVERLESS = 'NETLIFY' in os.environ or 'AWS_LAMBDA_FUNCTION_NAME' in os.environ or 'LAMBDA_TASK_ROOT' in os.environ or 'RENDER' in os.environ
 
 if IS_SERVERLESS:
     db_path = '/tmp/campus_connect.db'
@@ -19,11 +19,13 @@ else:
     db_path = os.path.join(BASE_DIR, 'campus_connect.db')
     upload_folder = os.path.join(BASE_DIR, 'static', 'uploads')
 
-database_url = os.environ.get('DATABASE_URL')
-if database_url:
+raw_db_url = os.environ.get('DATABASE_URL', '').strip()
+if raw_db_url:
     # Fix legacy 'postgres://' URLs from cloud providers to 'postgresql://' required by SQLAlchemy 1.4+
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    if raw_db_url.startswith("postgres://"):
+        database_url = raw_db_url.replace("postgres://", "postgresql://", 1)
+    else:
+        database_url = raw_db_url
 else:
     database_url = f'sqlite:///{db_path}'
 
