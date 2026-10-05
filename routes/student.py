@@ -6,10 +6,36 @@ from database import db
 from models import (
     User, Student, Faculty, Club, Department, Task, Note, NoteShare,
     Friendship, Doubt, DoubtReply, Assignment, AssignmentSubmission,
-    Notice, Quiz, QuizQuestion, QuizAttempt, ExternalResource
+    Notice, Quiz, QuizQuestion, QuizAttempt, ExternalResource, UploadedFile,
+    Message, ChatAttachment
 )
 from routes.auth import login_required, role_required
 from storage import upload_file_to_storage, get_file_download_response
+
+PROHIBITED_EXTENSIONS = {'exe', 'bat', 'cmd', 'sh', 'js', 'dll', 'apk', 'vbs', 'php', 'py', 'pl', 'cgi', 'msi', 'com', 'scr', 'jar', 'ps1', 'hta'}
+ALLOWED_CHAT_EXTENSIONS = {'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'png', 'jpg', 'jpeg', 'gif', 'zip', 'rar'}
+
+PROHIBITED_MIMETYPES = {
+    'application/x-msdownload', 'application/x-executable', 'application/x-doshd', 
+    'application/x-sh', 'application/x-shellscript', 'application/javascript', 
+    'text/javascript', 'application/x-php', 'application/x-httpd-php', 'text/x-python', 
+    'application/x-msdos-program', 'application/x-batch', 'application/octet-stream-exe'
+}
+
+def is_chat_file_safe(file_obj, filename):
+    if not filename or '.' not in filename:
+        return False
+    ext = filename.rsplit('.', 1)[1].lower()
+    if ext in PROHIBITED_EXTENSIONS:
+        return False
+    if ext not in ALLOWED_CHAT_EXTENSIONS:
+        return False
+    if file_obj and hasattr(file_obj, 'mimetype') and file_obj.mimetype:
+        mime = file_obj.mimetype.lower()
+        if mime in PROHIBITED_MIMETYPES:
+            return False
+    return True
+
 
 student_bp = Blueprint('student', __name__, url_prefix='/student')
 
@@ -73,11 +99,14 @@ def dashboard():
     # External Resources
     external_resources = ExternalResource.query.all()
 
-    # Classmates in same department
-    classmates = Student.query.filter(
-        Student.department_id == department.id,
-        Student.id != student.id
+    # Classmates in same department AND same academic year
+    classmates = Student.query.join(User).filter(
+        Student.department_id == student.department_id,
+        Student.academic_year == student.academic_year,
+        Student.id != student.id,
+        User.is_active == True
     ).all()
+
 
     return render_template(
         'student_dashboard.html',
@@ -419,3 +448,179 @@ def quiz_results(attempt_id):
 @login_required
 def download_file(filename):
     return get_file_download_response(filename)
+
+# --- ONE-TO-ONE CHAT & FILE SHARING ENDPOINTS ---
+@student_bp.route('/chat/messages/<int:target_user_id>')
+@login_required
+@role_required('student')
+def get_chat_messages(target_user_id):
+    current_user_id = session['user_id']
+    user = db.session.get(User, current_user_id)
+    student = user.student_profile
+
+    # Validate target user is a real student classmate in same department and year
+    target_user = db.session.get(User, target_user_id)
+    if not target_user or target_user.role != 'student' or not target_user.student_profile:
+        return jsonify({'error': 'Classmate account not found.'}), 404
+
+    target_student = target_user.student_profile
+    if target_student.department_id != student.department_id or target_student.academic_year != student.academic_year:
+        return jsonify({'error': 'Unauthorized: Target is not in your department or academic year.'}), 403
+
+    # Fetch conversation history
+    messages_query = Message.query.filter(
+        db.or_(
+            db.and_(Message.sender_id == current_user_id, Message.receiver_id == target_user_id),
+            db.and_(Message.sender_id == target_user_id, Message.receiver_id == current_user_id)
+        )
+    ).order_by(Message.created_at.asc()).all()
+
+    # Mark unread messages as read
+    unread_msgs = [m for m in messages_query if m.receiver_id == current_user_id and not m.is_read]
+    if unread_msgs:
+        for m in unread_msgs:
+            m.is_read = True
+        db.session.commit()
+
+    messages_data = []
+    for msg in messages_query:
+        att_list = []
+        for att in msg.attachments:
+            att_list.append({
+                'id': att.id,
+                'original_filename': att.original_filename,
+                'file_type': att.file_type,
+                'file_size': att.file_size,
+                'download_url': url_for('student.download_chat_attachment', attachment_id=att.id)
+            })
+        messages_data.append({
+            'id': msg.id,
+            'sender_id': msg.sender_id,
+            'receiver_id': msg.receiver_id,
+            'message_text': msg.message_text or '',
+            'created_at': msg.created_at.isoformat(),
+            'formatted_time': msg.created_at.strftime('%b %d, %I:%M %p'),
+            'attachments': att_list
+        })
+
+    return jsonify({
+        'target_user': {
+            'id': target_user.id,
+            'full_name': target_user.full_name,
+            'roll_number': target_student.roll_number or 'Student',
+            'academic_year': target_student.academic_year
+        },
+        'messages': messages_data
+    })
+
+
+@student_bp.route('/chat/send', methods=['POST'])
+@login_required
+@role_required('student')
+def send_chat_message():
+    current_user_id = session['user_id']
+    user = db.session.get(User, current_user_id)
+    student = user.student_profile
+
+    receiver_id = request.form.get('receiver_id', type=int)
+    message_text = request.form.get('message_text', '').strip()
+    file_obj = request.files.get('file')
+
+    if not receiver_id:
+        return jsonify({'error': 'Receiver ID is required.'}), 400
+
+    target_user = db.session.get(User, receiver_id)
+    if not target_user or target_user.role != 'student' or not target_user.student_profile:
+        return jsonify({'error': 'Invalid recipient classmate.'}), 404
+
+    target_student = target_user.student_profile
+    if target_student.department_id != student.department_id or target_student.academic_year != student.academic_year:
+        return jsonify({'error': 'Unauthorized: Recipient is not in your department and academic year.'}), 403
+
+    if not message_text and (not file_obj or not file_obj.filename):
+        return jsonify({'error': 'Please provide a text message or file attachment.'}), 400
+
+    storage_ref = None
+    orig_filename = None
+    file_type = None
+    file_size = 0
+
+    if file_obj and file_obj.filename:
+        filename = secure_filename(file_obj.filename)
+        if not is_chat_file_safe(file_obj, filename):
+            return jsonify({'error': 'File type not allowed or executable prohibited.'}), 400
+        
+        file_obj.seek(0, os.SEEK_END)
+        file_size = file_obj.tell()
+        file_obj.seek(0)
+
+        if file_size > 16 * 1024 * 1024:
+            return jsonify({'error': 'File size exceeds maximum limit of 16 MB.'}), 400
+
+        storage_ref = upload_file_to_storage(file_obj, prefix=f"chat_{current_user_id}")
+        orig_filename = filename
+        file_type = file_obj.mimetype or 'application/octet-stream'
+
+    # Create Message
+    new_message = Message(
+        sender_id=current_user_id,
+        receiver_id=receiver_id,
+        message_text=message_text,
+        is_read=False
+    )
+    db.session.add(new_message)
+    db.session.flush()
+
+    attachments_data = []
+    if storage_ref:
+        new_att = ChatAttachment(
+            message_id=new_message.id,
+            uploader_id=current_user_id,
+            receiver_id=receiver_id,
+            original_filename=orig_filename,
+            file_type=file_type,
+            file_size=file_size,
+            storage_reference=storage_ref
+        )
+        db.session.add(new_att)
+        db.session.flush()
+        attachments_data.append({
+            'id': new_att.id,
+            'original_filename': new_att.original_filename,
+            'file_type': new_att.file_type,
+            'file_size': new_att.file_size,
+            'download_url': url_for('student.download_chat_attachment', attachment_id=new_att.id)
+        })
+
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': {
+            'id': new_message.id,
+            'sender_id': new_message.sender_id,
+            'receiver_id': new_message.receiver_id,
+            'message_text': new_message.message_text or '',
+            'created_at': new_message.created_at.isoformat(),
+            'formatted_time': new_message.created_at.strftime('%b %d, %I:%M %p'),
+            'attachments': attachments_data
+        }
+    })
+
+
+@student_bp.route('/chat/download/<int:attachment_id>')
+@login_required
+def download_chat_attachment(attachment_id):
+    current_user_id = session.get('user_id')
+    att = db.session.get(ChatAttachment, attachment_id)
+    if not att:
+        flash('Attachment file not found.', 'danger')
+        return redirect(url_for('student.dashboard'))
+
+    # Security Check: Authorization
+    if current_user_id != att.uploader_id and current_user_id != att.receiver_id:
+        flash('Unauthorized to access this chat file.', 'danger')
+        return redirect(url_for('student.dashboard'))
+
+    return get_file_download_response(att.storage_reference)
+

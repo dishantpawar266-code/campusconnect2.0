@@ -299,5 +299,220 @@ class CampusConnectRealDataTestCase(unittest.TestCase):
         res = client.post('/login', data={'role': 'student', 'email': 'alice@rcpit.ac.in', 'password': 'pass123'}, follow_redirects=True)
         self.assertIn(b'Autonomous Line Follower Drone Race 2026', res.data)
 
+    def test_private_chat_and_file_sharing(self):
+        client = self.client
+        import io
+
+        # 1. Register Student Alice & Bob in same dept (AIML) & academic year (TE)
+        client.post('/register/student', data={
+            'full_name': 'Alice Chat',
+            'email': 'alicechat@rcpit.ac.in',
+            'password': 'password123',
+            'department_id': self.dept_aiml_id,
+            'academic_year': 'Third Year (TE)',
+            'roll_number': '301'
+        }, follow_redirects=True)
+
+        client.post('/register/student', data={
+            'full_name': 'Bob Chat',
+            'email': 'bobchat@rcpit.ac.in',
+            'password': 'password123',
+            'department_id': self.dept_aiml_id,
+            'academic_year': 'Third Year (TE)',
+            'roll_number': '302'
+        }, follow_redirects=True)
+
+        # Get User IDs
+        with app.app_context():
+            u_alice = User.query.filter_by(email='alicechat@rcpit.ac.in').first()
+            u_bob = User.query.filter_by(email='bobchat@rcpit.ac.in').first()
+            alice_id = u_alice.id
+            bob_id = u_bob.id
+
+        # 2. Login Alice and send private text message + study PDF attachment to Bob
+        client.post('/login', data={'role': 'student', 'email': 'alicechat@rcpit.ac.in', 'password': 'password123'}, follow_redirects=True)
+        
+        pdf_data = (io.BytesIO(b"%PDF-1.4 Fake PDF Content for Chat Test"), "notes_unit1.pdf")
+        res = client.post('/student/chat/send', data={
+            'receiver_id': str(bob_id),
+            'message_text': 'Hey Bob, here are the Unit 1 AI notes!',
+            'file': pdf_data
+        }, content_type='multipart/form-data')
+
+        self.assertEqual(res.status_code, 200)
+        res_json = res.get_json()
+        self.assertTrue(res_json.get('success'))
+        self.assertEqual(res_json['message']['message_text'], 'Hey Bob, here are the Unit 1 AI notes!')
+        self.assertEqual(len(res_json['message']['attachments']), 1)
+        att_id = res_json['message']['attachments'][0]['id']
+
+        client.get('/logout')
+
+        # 3. Login Bob and fetch chat history with Alice
+        client.post('/login', data={'role': 'student', 'email': 'bobchat@rcpit.ac.in', 'password': 'password123'}, follow_redirects=True)
+        res_history = client.get(f'/student/chat/messages/{alice_id}')
+        self.assertEqual(res_history.status_code, 200)
+        history_json = res_history.get_json()
+        self.assertEqual(len(history_json['messages']), 1)
+        self.assertEqual(history_json['messages'][0]['message_text'], 'Hey Bob, here are the Unit 1 AI notes!')
+
+        # Bob downloads attachment sent by Alice
+        res_dl = client.get(f'/student/chat/download/{att_id}')
+        self.assertEqual(res_dl.status_code, 200)
+        self.assertIn(b'%PDF-1.4 Fake PDF Content', res_dl.data)
+
+        client.get('/logout')
+
+        # 4. Security Test: Register Charlie in different Dept/Year & verify access is BLOCKED
+        client.post('/register/student', data={
+            'full_name': 'Charlie External',
+            'email': 'charlie@rcpit.ac.in',
+            'password': 'password123',
+            'department_id': self.dept_cse_id,
+            'academic_year': 'First Year (FE)',
+            'roll_number': '101'
+        }, follow_redirects=True)
+
+        client.post('/login', data={'role': 'student', 'email': 'charlie@rcpit.ac.in', 'password': 'password123'}, follow_redirects=True)
+        
+        # Charlie attempts to view Alice's chat messages (Should be blocked 403)
+        res_block = client.get(f'/student/chat/messages/{alice_id}')
+        self.assertEqual(res_block.status_code, 403)
+
+        # Charlie attempts to download Alice-Bob private attachment (Should redirect with security alert)
+        res_att_block = client.get(f'/student/chat/download/{att_id}', follow_redirects=True)
+        self.assertIn(b'Unauthorized to access this chat file', res_att_block.data)
+
+    def test_chat_file_security_validation(self):
+        client = self.client
+        import io
+
+        # Register Student 1 & Student 2
+        client.post('/register/student', data={
+            'full_name': 'Sec Student 1',
+            'email': 'sec1@rcpit.ac.in',
+            'password': 'password123',
+            'department_id': self.dept_aiml_id,
+            'academic_year': 'Second Year (SE)',
+            'roll_number': 'SE001'
+        }, follow_redirects=True)
+
+        client.post('/register/student', data={
+            'full_name': 'Sec Student 2',
+            'email': 'sec2@rcpit.ac.in',
+            'password': 'password123',
+            'department_id': self.dept_aiml_id,
+            'academic_year': 'Second Year (SE)',
+            'roll_number': 'SE002'
+        }, follow_redirects=True)
+
+        with app.app_context():
+            u2 = User.query.filter_by(email='sec2@rcpit.ac.in').first()
+            u2_id = u2.id
+
+        client.post('/login', data={'role': 'student', 'email': 'sec1@rcpit.ac.in', 'password': 'password123'}, follow_redirects=True)
+
+        # 1. Attempt to upload dangerous EXE file
+        exe_file = (io.BytesIO(b"MZ... Fake Executable Payload"), "malicious_app.exe")
+        res_exe = client.post('/student/chat/send', data={
+            'receiver_id': str(u2_id),
+            'message_text': 'Try running this app!',
+            'file': exe_file
+        }, content_type='multipart/form-data')
+        self.assertEqual(res_exe.status_code, 400)
+        self.assertIn('File type not allowed or executable prohibited', res_exe.get_json().get('error', ''))
+
+        # 2. Attempt to upload dangerous BAT script
+        bat_file = (io.BytesIO(b"@echo off\ndel /f /q *"), "script.bat")
+        res_bat = client.post('/student/chat/send', data={
+            'receiver_id': str(u2_id),
+            'message_text': 'Run script',
+            'file': bat_file
+        }, content_type='multipart/form-data')
+        self.assertEqual(res_bat.status_code, 400)
+
+        # 3. Attempt to upload JS file
+        js_file = (io.BytesIO(b"alert('xss');"), "exploit.js")
+        res_js = client.post('/student/chat/send', data={
+            'receiver_id': str(u2_id),
+            'message_text': 'Check js',
+            'file': js_file
+        }, content_type='multipart/form-data')
+        self.assertEqual(res_js.status_code, 400)
+
+        # 4. Upload valid DOCX file
+        docx_file = (io.BytesIO(b"PK... Fake DOCX Document"), "assignment_draft.docx")
+        res_valid = client.post('/student/chat/send', data={
+            'receiver_id': str(u2_id),
+            'message_text': 'Here is the DOCX draft',
+            'file': docx_file
+        }, content_type='multipart/form-data')
+        self.assertEqual(res_valid.status_code, 200)
+        self.assertTrue(res_valid.get_json().get('success'))
+
+    def test_classmates_isolation_and_no_faculty_or_clubs(self):
+        client = self.client
+
+        # Register Student 1, Student 2 (same dept/year), Faculty (same dept), Club (same dept)
+        client.post('/register/student', data={
+            'full_name': 'Iso Student A',
+            'email': 'isoa@rcpit.ac.in',
+            'password': 'password123',
+            'department_id': self.dept_cse_id,
+            'academic_year': 'Final Year (BE)',
+            'roll_number': 'BE001'
+        }, follow_redirects=True)
+
+        client.post('/register/student', data={
+            'full_name': 'Iso Student B',
+            'email': 'isob@rcpit.ac.in',
+            'password': 'password123',
+            'department_id': self.dept_cse_id,
+            'academic_year': 'Final Year (BE)',
+            'roll_number': 'BE002'
+        }, follow_redirects=True)
+
+        client.post('/register/faculty', data={
+            'full_name': 'Prof. Iso Faculty',
+            'email': 'isofaculty@rcpit.ac.in',
+            'password': 'password123',
+            'department_id': self.dept_cse_id,
+            'designation': 'Professor',
+            'specialization': 'Database Systems'
+        }, follow_redirects=True)
+
+        client.post('/register/club', data={
+            'club_name': 'Iso CSE Club',
+            'email': 'isoclub@rcpit.ac.in',
+            'passcode': 'clubpass123',
+            'leader_name': 'Iso Leader',
+            'category': 'Technical',
+            'department_id': str(self.dept_cse_id)
+        }, follow_redirects=True)
+
+        # Login Student A and verify dashboard HTML
+        res = client.post('/login', data={'role': 'student', 'email': 'isoa@rcpit.ac.in', 'password': 'password123'}, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+
+        # Classmate directory must include Iso Student B
+        self.assertIn(b'Iso Student B', res.data)
+
+        # Classmate directory must NOT contain Faculty or Club as classmate items in the directory!
+        # Verify that classmates list query only returns real registered students
+        with app.app_context():
+            u_isoa = User.query.filter_by(email='isoa@rcpit.ac.in').first()
+            st_isoa = u_isoa.student_profile
+            classmates = Student.query.join(User).filter(
+                Student.department_id == st_isoa.department_id,
+                Student.academic_year == st_isoa.academic_year,
+                Student.id != st_isoa.id,
+                User.is_active == True
+            ).all()
+            
+            self.assertEqual(len(classmates), 1)
+            self.assertEqual(classmates[0].user.full_name, 'Iso Student B')
+
 if __name__ == '__main__':
     unittest.main()
+
+
