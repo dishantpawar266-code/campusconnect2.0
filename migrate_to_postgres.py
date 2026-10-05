@@ -1,7 +1,7 @@
 """
 Database Migration Script for CampusConnect 2.0
 Migrates existing user data, profiles, and application records from local SQLite (campus_connect.db)
-to production PostgreSQL database (Supabase PostgreSQL).
+to production Render PostgreSQL database.
 """
 
 import os
@@ -12,8 +12,9 @@ from database import db
 from models import (
     Department, User, Student, Faculty, Club, Task, Note, NoteShare,
     Friendship, Doubt, DoubtReply, Assignment, AssignmentSubmission,
-    Notice, Quiz, QuizQuestion, QuizAttempt, ExternalResource
+    Notice, Quiz, QuizQuestion, QuizAttempt, ExternalResource, UploadedFile
 )
+
 
 def parse_dt(dt_str):
     if not dt_str:

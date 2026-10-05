@@ -248,3 +248,13 @@ class ExternalResource(db.Model):
     icon_name = db.Column(db.String(50), default='code')
     badge_tag = db.Column(db.String(50), default='Popular')
     is_api_supported = db.Column(db.Boolean, default=False)
+
+class UploadedFile(db.Model):
+    __tablename__ = 'uploaded_files'
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False, unique=True, index=True)
+    original_filename = db.Column(db.String(255), nullable=False)
+    mimetype = db.Column(db.String(100), nullable=False, default='application/octet-stream')
+    file_data = db.Column(db.LargeBinary, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
